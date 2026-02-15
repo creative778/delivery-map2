@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Advanced Delivery Map System</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<style>
+body{font-family:Arial;margin:0;background:#f4f4f4;color:#000;}
+.dark{background:#111;color:#fff;}
+.container{padding:15px;}
+input,select,button{padding:8px;margin:5px;width:95%;}
+button{background:#222;color:#fff;border:none;cursor:pointer;}
+.dark button{background:#444;}
+#map{height:350px;}
+.card{background:#fff;padding:10px;margin:10px 0;border-radius:8px;}
+.dark .card{background:#222;}
+.hidden{display:none;}
+.topbar{background:#000;color:#fff;padding:10px;text-align:center;}
+.toggle{float:right;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+Delivery System
+<span class="toggle" onclick="toggleDark()">🌙</span>
+</div>
+
+<div class="container">
+
+<!-- LOGIN -->
+<div id="loginBox">
+<h3>Login</h3>
+<input type="text" id="username" placeholder="Username">
+<input type="password" id="password" placeholder="Password">
+<button onclick="login()">Login</button>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel" class="hidden">
+
+<h3>Admin Panel</h3>
+<button onclick="logout()">Logout</button>
+
+<input type="text" id="number" placeholder="Customer Number">
+<input type="text" id="address" placeholder="Home Address">
+<select id="status">
+<option>Pending</option>
+<option>Delivered</option>
+<option>Returned</option>
+</select>
+<input type="text" id="note" placeholder="Note">
+<button onclick="saveData()">Save Location</button>
+<button onclick="updateData()">Update Status</button>
+<button onclick="deleteData()">Delete</button>
+
+<hr>
+
+<input type="text" id="searchNumber" placeholder="Search by Number">
+<button onclick="searchData()">Search</button>
+
+<div id="result"></div>
+
+</div>
+
+</div>
+
+<div id="map" class="hidden"></div>
+
+<script>
+
+let map;
+let marker;
+
+function initMap(){
+map = L.map('map').setView([23.8103,90.4125],12);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+attribution:'© OpenStreetMap'
+}).addTo(map);
+
+map.on('click', function(e){
+if(marker) map.removeLayer(marker);
+marker = L.marker(e.latlng).addTo(map);
+});
+}
+
+function login(){
+let u=document.getElementById("username").value;
+let p=document.getElementById("password").value;
+
+let users=JSON.parse(localStorage.getItem("users"))||{"admin":"1234"};
+
+if(users[u] && users[u]==p){
+localStorage.setItem("loggedIn",u);
+document.getElementById("loginBox").classList.add("hidden");
+document.getElementById("adminPanel").classList.remove("hidden");
+document.getElementById("map").classList.remove("hidden");
+initMap();
+}else{
+alert("Invalid login");
+}
+}
+
+function logout(){
+localStorage.removeItem("loggedIn");
+location.reload();
+}
+
+function saveData(){
+let number=document.getElementById("number").value;
+let address=document.getElementById("address").value;
+let status=document.getElementById("status").value;
+let note=document.getElementById("note").value;
+
+if(!marker){alert("Select location!");return;}
+
+let data=JSON.parse(localStorage.getItem("deliveries"))||{};
+let latlng=marker.getLatLng();
+
+if(data[number]){
+alert("⚠ Number exists!");
+return;
+}
+
+data[number]={
+address:address,
+status:status,
+note:note,
+lat:latlng.lat,
+lng:latlng.lng,
+count:1
+};
+
+localStorage.setItem("deliveries",JSON.stringify(data));
+alert("Saved!");
+}
+
+function updateData(){
+let number=document.getElementById("number").value;
+let status=document.getElementById("status").value;
+let data=JSON.parse(localStorage.getItem("deliveries"))||{};
+
+if(!data[number]){alert("Not found");return;}
+
+data[number].status=status;
+data[number].count+=1;
+
+localStorage.setItem("deliveries",JSON.stringify(data));
+alert("Updated & Count Increased!");
+}
+
+function deleteData(){
+let number=document.getElementById("number").value;
+let data=JSON.parse(localStorage.getItem("deliveries"))||{};
+if(!data[number]){alert("Not found");return;}
+
+delete data[number];
+localStorage.setItem("deliveries",JSON.stringify(data));
+alert("Deleted!");
+}
+
+function searchData(){
+let number=document.getElementById("searchNumber").value;
+let data=JSON.parse(localStorage.getItem("deliveries"))||{};
+if(!data[number]){
+document.getElementById("result").innerHTML="No Data Found";
+return;
+}
+
+let info=data[number];
+
+map.setView([info.lat,info.lng],15);
+if(marker) map.removeLayer(marker);
+marker=L.marker([info.lat,info.lng]).addTo(map);
+
+navigator.geolocation.getCurrentPosition(function(pos){
+let dist=getDistance(pos.coords.latitude,pos.coords.longitude,info.lat,info.lng);
+
+document.getElementById("result").innerHTML=
+"<div class='card'>Address: "+info.address+
+"<br>Status: "+info.status+
+"<br>Note: "+info.note+
+"<br>Delivery Count: "+info.count+
+"<br>Distance: "+dist.toFixed(2)+" km"+
+"<br><button onclick='route("+info.lat+","+info.lng+")'>Open Route</button></div>";
+});
+}
+
+function route(lat,lng){
+window.open("https://www.google.com/maps/dir/?api=1&destination="+lat+","+lng);
+}
+
+function getDistance(lat1,lon1,lat2,lon2){
+let R=6371;
+let dLat=(lat2-lat1)*Math.PI/180;
+let dLon=(lon2-lon1)*Math.PI/180;
+let a=Math.sin(dLat/2)*Math.sin(dLat/2)+
+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+Math.sin(dLon/2)*Math.sin(dLon/2);
+let c=2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+return R*c;
+}
+
+function toggleDark(){
+document.body.classList.toggle("dark");
+}
+
+if(localStorage.getItem("loggedIn")){
+document.getElementById("loginBox").classList.add("hidden");
+document.getElementById("adminPanel").classList.remove("hidden");
+document.getElementById("map").classList.remove("hidden");
+initMap();
+}
+
+</script>
+
+</body>
+</html>
