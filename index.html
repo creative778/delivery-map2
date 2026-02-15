@@ -5,181 +5,250 @@
 <title>Cloud Delivery Manager</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<!-- Leaflet map library -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <style>
-body{font-family:Arial;margin:0;background:#f4f4f4}
-#map{height:350px}
-.container{padding:15px}
-input,button,select{padding:8px;margin:5px;width:95%}
-button{background:black;color:white;border:none}
-.card{background:white;padding:10px;margin:10px 0;border-radius:6px}
-.hidden{display:none}
+  body{font-family:Arial;margin:0;background:#f4f4f4}
+  #map{height:350px}
+  .container{padding:15px}
+  input,button,select,textarea{padding:8px;margin:5px;width:95%}
+  button{background:#000;color:#fff;border:none;cursor:pointer}
+  .card{background:#fff;padding:10px;margin:10px 0;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+  .hidden{display:none}
 </style>
 </head>
+
 <body>
 
 <div class="container">
 
-<h2>Cloud Delivery Manager</h2>
+  <h2>Cloud Delivery Manager</h2>
 
-<div id="loginBox">
-<input type="text" id="email" placeholder="Username">
-<input type="password" id="password" placeholder="Password">
-<button onclick="login()">Login</button>
+  <!-- Login box -->
+  <div id="loginBox">
+    <input type="text" id="email" placeholder="Username (e.g. admin@gmail.com)">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+  </div>
+
+  <!-- Main panel (hidden until login) -->
+  <div id="panel" class="hidden">
+
+    <h3>Add Delivery</h3>
+    <input type="text" id="mobile" placeholder="Mobile Number">
+    <input type="text" id="customerName" placeholder="Customer Name">
+    <input type="text" id="address" placeholder="Address">
+    <button onclick="saveDelivery()">Save</button>
+
+    <hr>
+
+    <h3>Single Search</h3>
+    <input type="text" id="singleSearch" placeholder="Mobile Number">
+    <button onclick="singleSearch()">Search</button>
+
+    <hr>
+
+    <h3>Multiple Search (Max 50 comma‑separated)</h3>
+    <textarea id="multiSearch" rows="3"
+              placeholder="017xxx,018xxx,…"></textarea>
+    <button onclick="multiSearch()">Search &amp; Sort</button>
+
+    <div id="result"></div>
+  </div>
 </div>
 
-<div id="panel" class="hidden">
-
-<h3>Add Delivery</h3>
-<input type="text" id="mobile" placeholder="Mobile Number">
-<input type="text" id="customerName" placeholder="Customer Name">
-<input type="text" id="address" placeholder="Address">
-<button onclick="saveDelivery()">Save</button>
-
-<hr>
-
-<h3>Single Search</h3>
-<input type="text" id="singleSearch" placeholder="Mobile Number">
-<button onclick="singleSearch()">Search</button>
-
-<hr>
-
-<h3>Multiple Search (Max 50 comma separated)</h3>
-<textarea id="multiSearch" placeholder="017xxx,018xxx"></textarea>
-<button onclick="multiSearch()">Search & Sort</button>
-
-<div id="result"></div>
-
-</div>
-
-</div>
-
+<!-- Map (hidden until login) -->
 <div id="map" class="hidden"></div>
 
+<!-- --------------------------------------------------------------- -->
+<!--   JavaScript – Firebase + Leaflet                               -->
+<!-- --------------------------------------------------------------- -->
 <script type="module">
+  // ----- Firebase SDK imports -------------------------------------------------
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+  import { getFirestore, collection, setDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+  import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getFirestore, collection, setDoc, doc, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+  // ----- Your Firebase project configuration ---------------------------------
+  const firebaseConfig = {
+    apiKey: "AIzaSyA82YWF574aCnkYdwN0airAcFl-_M21sHM",
+    authDomain: "delivery-map-pro.firebaseapp.com",
+    projectId: "delivery-map-pro",
+    storageBucket: "delivery-map-pro.firebasestorage.app",
+    messagingSenderId: "544868009171",
+    appId: "1:544868009171:web:e416002a340d96400b8026"
+  };
 
-const firebaseConfig = {
-  apiKey: "AIzaSyA82YWF574aCnkYdwN0airAcFl-_M21sHM",
-  authDomain: "delivery-map-pro.firebaseapp.com",
-  projectId: "delivery-map-pro",
-  storageBucket: "delivery-map-pro.firebasestorage.app",
-  messagingSenderId: "544868009171",
-  appId: "1:544868009171:web:e416002a340d96400b8026"
-};
+  // ----- Initialise Firebase ----------------------------------------------------
+  const app   = initializeApp(firebaseConfig);
+  const db    = getFirestore(app);
+  const auth  = getAuth(app);
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
+  // ----- Initialise Leaflet map -------------------------------------------------
+  const map = L.map('map').setView([23.8103, 90.4125], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
+    .addTo(map);
 
-let map = L.map('map').setView([23.8103,90.4125],12);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+  let marker; // the temporary marker the user clicks on
 
-let marker;
+  map.on('click', e => {
+    if (marker) map.removeLayer(marker);
+    marker = L.marker(e.latlng).addTo(map);
+  });
 
-map.on('click', e=>{
-if(marker) map.removeLayer(marker);
-marker = L.marker(e.latlng).addTo(map);
-});
+  // ---------------------------------------------------------------------------
+  // --------------------------- UI Functions ---------------------------------
+  // ---------------------------------------------------------------------------
 
-window.login = async function(){
-try{
-await signInWithEmailAndPassword(auth,
-document.getElementById("email").value,
-document.getElementById("password").value
-);
-loginBox.classList.add("hidden");
-panel.classList.remove("hidden");
-map.getContainer().classList.remove("hidden");
-}catch(e){alert("Login Failed");}
-}
+  // ---- Login ---------------------------------------------------------------
+  window.login = async function () {
+    try {
+      await signInWithEmailAndPassword(
+        auth,
+        document.getElementById("email").value.trim(),
+        document.getElementById("password").value
+      );
+      // hide login, show panel + map
+      document.getElementById("loginBox").classList.add("hidden");
+      document.getElementById("panel").classList.remove("hidden");
+      document.getElementById("map").classList.remove("hidden");
+    } catch (e) {
+      alert("Login Failed – please check email/password.");
+      console.error(e);
+    }
+  };
 
-window.saveDelivery = async function(){
-if(!marker){alert("Select location");return;}
-let mobile = mobile.value.trim();
-let data = {
-mobile:mobile,
-customerName:customerName.value,
-address:address.value,
-lat:marker.getLatLng().lat,
-lng:marker.getLatLng().lng
-};
-await setDoc(doc(db,"deliveries",mobile),data);
-alert("Saved to Cloud");
-}
+  // ---- Save a delivery -------------------------------------------------------
+  window.saveDelivery = async function () {
+    if (!marker) {
+      alert("Please click on the map to select a location first.");
+      return;
+    }
+    const mobile = document.getElementById("mobile").value.trim();
+    if (!mobile) {
+      alert("Mobile number required.");
+      return;
+    }
+    const data = {
+      mobile: mobile,
+      customerName: document.getElementById("customerName").value.trim(),
+      address: document.getElementById("address").value.trim(),
+      lat: marker.getLatLng().lat,
+      lng: marker.getLatLng().lng
+    };
+    await setDoc(doc(db, "deliveries", mobile), data);
+    alert("Saved to Cloud");
+  };
 
-window.singleSearch = async function(){
-let mobile = singleSearch.value.trim();
-let docSnap = await getDoc(doc(db,"deliveries",mobile));
-if(!docSnap.exists()){result.innerHTML="No Data";return;}
-showOnMap(docSnap.data());
-}
+  // ---- Single search ---------------------------------------------------------
+  window.singleSearch = async function () {
+    const mobile = document.getElementById("singleSearch").value.trim();
+    if (!mobile) {
+      alert("Enter a mobile number.");
+      return;
+    }
+    const docSnap = await getDoc(doc(db, "deliveries", mobile));
+    if (!docSnap.exists()) {
+      document.getElementById("result").innerHTML = "<p>No data found.</p>";
+      return;
+    }
+    showOnMap(docSnap.data());
+    document.getElementById("result").innerHTML = `<p>Found delivery for ${docSnap.data().customerName}</p>`;
+  };
 
-window.multiSearch = async function(){
-let numbers = multiSearch.value.split(",").map(n=>n.trim()).slice(0,50);
-let unmatched=[];
-let found=[];
+  // ---- Multiple search -------------------------------------------------------
+  window.multiSearch = async function () {
+    const raw   = document.getElementById("multiSearch").value;
+    const numbers = raw.split(",")
+                       .map(n => n.trim())
+                       .filter(n => n !== "")
+                       .slice(0, 50); // enforce max 50
 
-for(let num of numbers){
-let d = await getDoc(doc(db,"deliveries",num));
-if(d.exists()){
-found.push(d.data());
-}else{
-unmatched.push(num);
-}
-}
+    if (numbers.length === 0) {
+      alert("Enter at least one mobile number.");
+      return;
+    }
 
-navigator.geolocation.getCurrentPosition(pos=>{
-found.sort((a,b)=>{
-let da = distance(pos.coords.latitude,pos.coords.longitude,a.lat,a.lng);
-let dbb = distance(pos.coords.latitude,pos.coords.longitude,b.lat,b.lng);
-return da-dbb;
-});
+    const unmatched = [];
+    const found     = [];
 
-result.innerHTML="";
-found.forEach((f,i)=>{
-result.innerHTML+=`<div class="card">
-${i+1}. ${f.customerName} (${f.mobile})
-<br>${f.address}
-<br><button onclick="route(${f.lat},${f.lng})">Route</button>
-</div>`;
-});
+    // fetch each entry
+    for (const num of numbers) {
+      const d = await getDoc(doc(db, "deliveries", num));
+      if (d.exists()) {
+        found.push(d.data());
+      } else {
+        unmatched.push(num);
+      }
+    }
 
-if(unmatched.length>0){
-result.innerHTML+=`<div class="card">
-<b>This All Number Looks New, No Old Map Found:</b>
-<br>${unmatched.join(", ")}
-</div>`;
-}
+    // Get current GPS location for sorting
+    navigator.geolocation.getCurrentPosition(pos => {
+      const { latitude, longitude } = pos.coords;
+      found.sort((a, b) => {
+        const da = distance(latitude, longitude, a.lat, a.lng);
+        const db = distance(latitude, longitude, b.lat, b.lng);
+        return da - db;
+      });
 
-});
-}
+      const resultDiv = document.getElementById("result");
+      resultDiv.innerHTML = ""; // clear previous
 
-function showOnMap(data){
-map.setView([data.lat,data.lng],15);
-if(marker) map.removeLayer(marker);
-marker=L.marker([data.lat,data.lng]).addTo(map);
-}
+      // render found deliveries
+      found.forEach((f, i) => {
+        resultDiv.innerHTML += `
+          <div class="card">
+            <strong>${i + 1}. ${f.customerName} (${f.mobile})</strong><br>
+            ${f.address}<br>
+            <button onclick="route(${f.lat},${f.lng})">Route</button>
+          </div>`;
+      });
 
-window.route = function(lat,lng){
-window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
-}
+      // render unmatched numbers, if any
+      if (unmatched.length) {
+        resultDiv.innerHTML += `
+          <div class="card">
+            <b>This All Number Looks New, No Old Map Found:</b><br>
+            ${unmatched.join(", ")}
+          </div>`;
+      }
+    }, err => {
+      // If GPS fails, just show unsorted results
+      alert("Could not get current location – showing unsorted list.");
+      document.getElementById("result").innerHTML = found.map((f, i) => `
+        <div class="card">
+          <strong>${i + 1}. ${f.customerName} (${f.mobile})</strong><br>
+          ${f.address}<br>
+          <button onclick="route(${f.lat},${f.lng})">Route</button>
+        </div>`).join("");
+    });
+  };
 
-function distance(lat1,lon1,lat2,lon2){
-let R=6371;
-let dLat=(lat2-lat1)*Math.PI/180;
-let dLon=(lon2-lon1)*Math.PI/180;
-let a=Math.sin(dLat/2)**2+
-Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
-Math.sin(dLon/2)**2;
-return R*(2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)));
-}
+  // ---- Show a single delivery on map ----------------------------------------
+  function showOnMap(data) {
+    map.setView([data.lat, data.lng], 15);
+    if (marker) map.removeLayer(marker);
+    marker = L.marker([data.lat, data.lng]).addTo(map);
+  }
 
+  // ---- Open Google Maps route -----------------------------------------------
+  window.route = function (lat, lng) {
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
+  };
+
+  // ---- Haversine distance (km) ---------------------------------------------
+  function distance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 +
+              Math.cos(lat1 * Math.PI / 180) *
+              Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) ** 2;
+    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+  }
 </script>
 
 </body>
