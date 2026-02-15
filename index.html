@@ -1,232 +1,173 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
-<title>Delivery Map Ultimate</title>
+<meta charset="UTF-8">
+<title>Cloud Delivery Manager</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <style>
-body{font-family:Arial;margin:0;background:#f4f4f4;color:#000;}
-.dark{background:#111;color:#fff;}
-.container{padding:15px;}
-input,select,button{padding:8px;margin:5px;width:95%;}
-button{background:#222;color:#fff;border:none;cursor:pointer;}
-.dark button{background:#444;}
-#map{height:350px;}
-.card{background:#fff;padding:10px;margin:10px 0;border-radius:8px;}
-.dark .card{background:#222;}
-.hidden{display:none;}
-.topbar{background:#000;color:#fff;padding:10px;text-align:center;}
-.toggle{float:right;cursor:pointer;}
-.smallbtn{width:auto;padding:6px 10px;margin:3px;}
+body{font-family:Arial;margin:0;background:#f4f4f4}
+#map{height:350px}
+.container{padding:15px}
+input,button,select{padding:8px;margin:5px;width:95%}
+button{background:black;color:white;border:none}
+.card{background:white;padding:10px;margin:10px 0;border-radius:6px}
+.hidden{display:none}
 </style>
 </head>
 <body>
 
-<div class="topbar">
-Delivery Map Ultimate
-<span class="toggle" onclick="toggleDark()">🌙</span>
-</div>
-
 <div class="container">
 
+<h2>Cloud Delivery Manager</h2>
+
 <div id="loginBox">
-<h3>Login</h3>
-<input type="text" id="username" placeholder="Username">
+<input type="text" id="email" placeholder="Username">
 <input type="password" id="password" placeholder="Password">
 <button onclick="login()">Login</button>
 </div>
 
 <div id="panel" class="hidden">
 
-<button onclick="logout()" class="smallbtn">Logout</button>
-<button onclick="changePassword()" class="smallbtn">Change Password</button>
-
-<h3>Add / Update Delivery</h3>
-
+<h3>Add Delivery</h3>
 <input type="text" id="mobile" placeholder="Mobile Number">
-<input type="text" id="address" placeholder="Full Address">
-
-<select id="status">
-<option>Pending</option>
-<option>Delivered</option>
-<option>Returned</option>
-</select>
-
-<input type="text" id="note" placeholder="Note">
-
-<button onclick="saveData()">Save New</button>
-<button onclick="updateData()">Update Status</button>
-<button onclick="deleteData()">Delete</button>
-<button onclick="detectGPS()">Auto Detect GPS</button>
+<input type="text" id="customerName" placeholder="Customer Name">
+<input type="text" id="address" placeholder="Address">
+<button onclick="saveDelivery()">Save</button>
 
 <hr>
 
-<h3>Search by Mobile</h3>
+<h3>Single Search</h3>
+<input type="text" id="singleSearch" placeholder="Mobile Number">
+<button onclick="singleSearch()">Search</button>
 
-<input type="text" id="searchMobile" placeholder="Enter Mobile">
-<button onclick="searchData()">Search</button>
+<hr>
+
+<h3>Multiple Search (Max 50 comma separated)</h3>
+<textarea id="multiSearch" placeholder="017xxx,018xxx"></textarea>
+<button onclick="multiSearch()">Search & Sort</button>
 
 <div id="result"></div>
 
-<hr>
-
-<h3>Data Tools</h3>
-<button onclick="exportCSV()" class="smallbtn">Export CSV</button>
-<button onclick="backupData()" class="smallbtn">Backup JSON</button>
-<input type="file" onchange="restoreData(event)" class="smallbtn">
-<button onclick="clearAll()" class="smallbtn">Clear All Data</button>
-
 </div>
+
 </div>
 
 <div id="map" class="hidden"></div>
 
-<script>
+<script type="module">
 
-let map, marker;
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getFirestore, collection, setDoc, doc, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
-function initMap(){
-map=L.map('map').setView([23.8103,90.4125],12);
+const firebaseConfig = {
+  apiKey: "AIzaSyA82YWF574aCnkYdwN0airAcFl-_M21sHM",
+  authDomain: "delivery-map-pro.firebaseapp.com",
+  projectId: "delivery-map-pro",
+  storageBucket: "delivery-map-pro.firebasestorage.app",
+  messagingSenderId: "544868009171",
+  appId: "1:544868009171:web:e416002a340d96400b8026"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+let map = L.map('map').setView([23.8103,90.4125],12);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-map.on('click',function(e){
+let marker;
+
+map.on('click', e=>{
 if(marker) map.removeLayer(marker);
-marker=L.marker(e.latlng).addTo(map);
+marker = L.marker(e.latlng).addTo(map);
 });
-}
 
-function login(){
-let u=username.value;
-let p=password.value;
-let users=JSON.parse(localStorage.getItem("users"))||{"admin":"1234"};
-if(users[u]&&users[u]==p){
-localStorage.setItem("loggedIn",u);
-showPanel();
-}else alert("Invalid login");
-}
-
-function showPanel(){
+window.login = async function(){
+try{
+await signInWithEmailAndPassword(auth,
+document.getElementById("email").value,
+document.getElementById("password").value
+);
 loginBox.classList.add("hidden");
 panel.classList.remove("hidden");
-mapDiv();
+map.getContainer().classList.remove("hidden");
+}catch(e){alert("Login Failed");}
 }
 
-function mapDiv(){
-document.getElementById("map").classList.remove("hidden");
-initMap();
-}
-
-function logout(){localStorage.clear();location.reload();}
-
-function changePassword(){
-let newPass=prompt("Enter new password:");
-let users={"admin":newPass};
-localStorage.setItem("users",JSON.stringify(users));
-alert("Password changed!");
-}
-
-function saveData(){
-let mobile=mobileField();
-let address=addressField();
-if(!mobile||!address||!marker){alert("Complete all fields!");return;}
-let data=getData();
-if(data[mobile]){alert("Number exists!");return;}
-let latlng=marker.getLatLng();
-data[mobile]={address,status:status.value,note:note.value,lat:latlng.lat,lng:latlng.lng,count:1};
-setData(data);
-alert("Saved!");
-}
-
-function updateData(){
-let mobile=mobileField();
-let data=getData();
-if(!data[mobile]){alert("Not found!");return;}
-data[mobile].status=status.value;
-data[mobile].count+=1;
-setData(data);
-alert("Updated!");
-}
-
-function deleteData(){
-let mobile=mobileField();
-let data=getData();
-if(!data[mobile]){alert("Not found!");return;}
-delete data[mobile];
-setData(data);
-alert("Deleted!");
-}
-
-function searchData(){
-let mobile=searchMobile.value.trim();
-let data=getData();
-if(!data[mobile]){result.innerHTML="No Data";return;}
-let info=data[mobile];
-fillForm(mobile,info);
-map.setView([info.lat,info.lng],15);
-if(marker) map.removeLayer(marker);
-marker=L.marker([info.lat,info.lng]).addTo(map);
-navigator.geolocation.getCurrentPosition(function(pos){
-let dist=distance(pos.coords.latitude,pos.coords.longitude,info.lat,info.lng);
-result.innerHTML="<div class='card'><b>Address:</b>"+info.address+
-"<br><b>Status:</b>"+info.status+
-"<br><b>Note:</b>"+info.note+
-"<br><b>Count:</b>"+info.count+
-"<br><b>Distance:</b>"+dist.toFixed(2)+" km"+
-"<br><button onclick='route("+info.lat+","+info.lng+")'>Route</button></div>";
-});
-}
-
-function detectGPS(){
-navigator.geolocation.getCurrentPosition(function(pos){
-if(marker) map.removeLayer(marker);
-marker=L.marker([pos.coords.latitude,pos.coords.longitude]).addTo(map);
-map.setView([pos.coords.latitude,pos.coords.longitude],15);
-});
-}
-
-function route(lat,lng){
-window.open("https://www.google.com/maps/dir/?api=1&destination="+lat+","+lng);
-}
-
-function exportCSV(){
-let data=getData();
-let csv="Mobile,Address,Status,Note,Count\n";
-for(let m in data){
-let d=data[m];
-csv+=`${m},${d.address},${d.status},${d.note},${d.count}\n`;
-}
-download("data.csv",csv);
-}
-
-function backupData(){
-download("backup.json",JSON.stringify(getData()));
-}
-
-function restoreData(e){
-let file=e.target.files[0];
-let reader=new FileReader();
-reader.onload=function(){
-localStorage.setItem("deliveries",reader.result);
-alert("Restored!");
+window.saveDelivery = async function(){
+if(!marker){alert("Select location");return;}
+let mobile = mobile.value.trim();
+let data = {
+mobile:mobile,
+customerName:customerName.value,
+address:address.value,
+lat:marker.getLatLng().lat,
+lng:marker.getLatLng().lng
 };
-reader.readAsText(file);
+await setDoc(doc(db,"deliveries",mobile),data);
+alert("Saved to Cloud");
 }
 
-function clearAll(){
-if(confirm("Delete all data?")){
-localStorage.removeItem("deliveries");
-alert("Cleared!");
+window.singleSearch = async function(){
+let mobile = singleSearch.value.trim();
+let docSnap = await getDoc(doc(db,"deliveries",mobile));
+if(!docSnap.exists()){result.innerHTML="No Data";return;}
+showOnMap(docSnap.data());
+}
+
+window.multiSearch = async function(){
+let numbers = multiSearch.value.split(",").map(n=>n.trim()).slice(0,50);
+let unmatched=[];
+let found=[];
+
+for(let num of numbers){
+let d = await getDoc(doc(db,"deliveries",num));
+if(d.exists()){
+found.push(d.data());
+}else{
+unmatched.push(num);
 }
 }
 
-function download(name,text){
-let a=document.createElement("a");
-a.href=URL.createObjectURL(new Blob([text]));
-a.download=name;
-a.click();
+navigator.geolocation.getCurrentPosition(pos=>{
+found.sort((a,b)=>{
+let da = distance(pos.coords.latitude,pos.coords.longitude,a.lat,a.lng);
+let dbb = distance(pos.coords.latitude,pos.coords.longitude,b.lat,b.lng);
+return da-dbb;
+});
+
+result.innerHTML="";
+found.forEach((f,i)=>{
+result.innerHTML+=`<div class="card">
+${i+1}. ${f.customerName} (${f.mobile})
+<br>${f.address}
+<br><button onclick="route(${f.lat},${f.lng})">Route</button>
+</div>`;
+});
+
+if(unmatched.length>0){
+result.innerHTML+=`<div class="card">
+<b>This All Number Looks New, No Old Map Found:</b>
+<br>${unmatched.join(", ")}
+</div>`;
+}
+
+});
+}
+
+function showOnMap(data){
+map.setView([data.lat,data.lng],15);
+if(marker) map.removeLayer(marker);
+marker=L.marker([data.lat,data.lng]).addTo(map);
+}
+
+window.route = function(lat,lng){
+window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
 }
 
 function distance(lat1,lon1,lat2,lon2){
@@ -238,21 +179,6 @@ Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
 Math.sin(dLon/2)**2;
 return R*(2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)));
 }
-
-function getData(){return JSON.parse(localStorage.getItem("deliveries"))||{};}
-function setData(d){localStorage.setItem("deliveries",JSON.stringify(d));}
-function mobileField(){return document.getElementById("mobile").value.trim();}
-function addressField(){return document.getElementById("address").value.trim();}
-function fillForm(m,i){
-mobile.value=m;
-address.value=i.address;
-status.value=i.status;
-note.value=i.note;
-}
-
-function toggleDark(){document.body.classList.toggle("dark");}
-
-if(localStorage.getItem("loggedIn")) showPanel();
 
 </script>
 
