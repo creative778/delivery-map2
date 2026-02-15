@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Advanced Delivery Map System</title>
+<title>Delivery Map Ultimate</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -20,18 +20,18 @@ button{background:#222;color:#fff;border:none;cursor:pointer;}
 .hidden{display:none;}
 .topbar{background:#000;color:#fff;padding:10px;text-align:center;}
 .toggle{float:right;cursor:pointer;}
+.smallbtn{width:auto;padding:6px 10px;margin:3px;}
 </style>
 </head>
 <body>
 
 <div class="topbar">
-Delivery System
+Delivery Map Ultimate
 <span class="toggle" onclick="toggleDark()">🌙</span>
 </div>
 
 <div class="container">
 
-<!-- LOGIN -->
 <div id="loginBox">
 <h3>Login</h3>
 <input type="text" id="username" placeholder="Username">
@@ -39,153 +39,151 @@ Delivery System
 <button onclick="login()">Login</button>
 </div>
 
-<!-- ADMIN PANEL -->
-<div id="adminPanel" class="hidden">
+<div id="panel" class="hidden">
 
-<h3>Admin Panel</h3>
-<button onclick="logout()">Logout</button>
+<button onclick="logout()" class="smallbtn">Logout</button>
+<button onclick="changePassword()" class="smallbtn">Change Password</button>
 
-<input type="text" id="number" placeholder="Customer Number">
-<input type="text" id="address" placeholder="Home Address">
+<h3>Add / Update Delivery</h3>
+
+<input type="text" id="mobile" placeholder="Mobile Number">
+<input type="text" id="address" placeholder="Full Address">
+
 <select id="status">
 <option>Pending</option>
 <option>Delivered</option>
 <option>Returned</option>
 </select>
+
 <input type="text" id="note" placeholder="Note">
-<button onclick="saveData()">Save Location</button>
+
+<button onclick="saveData()">Save New</button>
 <button onclick="updateData()">Update Status</button>
 <button onclick="deleteData()">Delete</button>
+<button onclick="detectGPS()">Auto Detect GPS</button>
 
 <hr>
 
-<input type="text" id="searchNumber" placeholder="Search by Number">
+<h3>Search by Mobile</h3>
+
+<input type="text" id="searchMobile" placeholder="Enter Mobile">
 <button onclick="searchData()">Search</button>
 
 <div id="result"></div>
 
-</div>
+<hr>
 
+<h3>Data Tools</h3>
+<button onclick="exportCSV()" class="smallbtn">Export CSV</button>
+<button onclick="backupData()" class="smallbtn">Backup JSON</button>
+<input type="file" onchange="restoreData(event)" class="smallbtn">
+<button onclick="clearAll()" class="smallbtn">Clear All Data</button>
+
+</div>
 </div>
 
 <div id="map" class="hidden"></div>
 
 <script>
 
-let map;
-let marker;
+let map, marker;
 
 function initMap(){
-map = L.map('map').setView([23.8103,90.4125],12);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-attribution:'© OpenStreetMap'
-}).addTo(map);
+map=L.map('map').setView([23.8103,90.4125],12);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-map.on('click', function(e){
+map.on('click',function(e){
 if(marker) map.removeLayer(marker);
-marker = L.marker(e.latlng).addTo(map);
+marker=L.marker(e.latlng).addTo(map);
 });
 }
 
 function login(){
-let u=document.getElementById("username").value;
-let p=document.getElementById("password").value;
-
+let u=username.value;
+let p=password.value;
 let users=JSON.parse(localStorage.getItem("users"))||{"admin":"1234"};
-
-if(users[u] && users[u]==p){
+if(users[u]&&users[u]==p){
 localStorage.setItem("loggedIn",u);
-document.getElementById("loginBox").classList.add("hidden");
-document.getElementById("adminPanel").classList.remove("hidden");
+showPanel();
+}else alert("Invalid login");
+}
+
+function showPanel(){
+loginBox.classList.add("hidden");
+panel.classList.remove("hidden");
+mapDiv();
+}
+
+function mapDiv(){
 document.getElementById("map").classList.remove("hidden");
 initMap();
-}else{
-alert("Invalid login");
-}
 }
 
-function logout(){
-localStorage.removeItem("loggedIn");
-location.reload();
+function logout(){localStorage.clear();location.reload();}
+
+function changePassword(){
+let newPass=prompt("Enter new password:");
+let users={"admin":newPass};
+localStorage.setItem("users",JSON.stringify(users));
+alert("Password changed!");
 }
 
 function saveData(){
-let number=document.getElementById("number").value;
-let address=document.getElementById("address").value;
-let status=document.getElementById("status").value;
-let note=document.getElementById("note").value;
-
-if(!marker){alert("Select location!");return;}
-
-let data=JSON.parse(localStorage.getItem("deliveries"))||{};
+let mobile=mobileField();
+let address=addressField();
+if(!mobile||!address||!marker){alert("Complete all fields!");return;}
+let data=getData();
+if(data[mobile]){alert("Number exists!");return;}
 let latlng=marker.getLatLng();
-
-if(data[number]){
-alert("⚠ Number exists!");
-return;
-}
-
-data[number]={
-address:address,
-status:status,
-note:note,
-lat:latlng.lat,
-lng:latlng.lng,
-count:1
-};
-
-localStorage.setItem("deliveries",JSON.stringify(data));
+data[mobile]={address,status:status.value,note:note.value,lat:latlng.lat,lng:latlng.lng,count:1};
+setData(data);
 alert("Saved!");
 }
 
 function updateData(){
-let number=document.getElementById("number").value;
-let status=document.getElementById("status").value;
-let data=JSON.parse(localStorage.getItem("deliveries"))||{};
-
-if(!data[number]){alert("Not found");return;}
-
-data[number].status=status;
-data[number].count+=1;
-
-localStorage.setItem("deliveries",JSON.stringify(data));
-alert("Updated & Count Increased!");
+let mobile=mobileField();
+let data=getData();
+if(!data[mobile]){alert("Not found!");return;}
+data[mobile].status=status.value;
+data[mobile].count+=1;
+setData(data);
+alert("Updated!");
 }
 
 function deleteData(){
-let number=document.getElementById("number").value;
-let data=JSON.parse(localStorage.getItem("deliveries"))||{};
-if(!data[number]){alert("Not found");return;}
-
-delete data[number];
-localStorage.setItem("deliveries",JSON.stringify(data));
+let mobile=mobileField();
+let data=getData();
+if(!data[mobile]){alert("Not found!");return;}
+delete data[mobile];
+setData(data);
 alert("Deleted!");
 }
 
 function searchData(){
-let number=document.getElementById("searchNumber").value;
-let data=JSON.parse(localStorage.getItem("deliveries"))||{};
-if(!data[number]){
-document.getElementById("result").innerHTML="No Data Found";
-return;
-}
-
-let info=data[number];
-
+let mobile=searchMobile.value.trim();
+let data=getData();
+if(!data[mobile]){result.innerHTML="No Data";return;}
+let info=data[mobile];
+fillForm(mobile,info);
 map.setView([info.lat,info.lng],15);
 if(marker) map.removeLayer(marker);
 marker=L.marker([info.lat,info.lng]).addTo(map);
-
 navigator.geolocation.getCurrentPosition(function(pos){
-let dist=getDistance(pos.coords.latitude,pos.coords.longitude,info.lat,info.lng);
+let dist=distance(pos.coords.latitude,pos.coords.longitude,info.lat,info.lng);
+result.innerHTML="<div class='card'><b>Address:</b>"+info.address+
+"<br><b>Status:</b>"+info.status+
+"<br><b>Note:</b>"+info.note+
+"<br><b>Count:</b>"+info.count+
+"<br><b>Distance:</b>"+dist.toFixed(2)+" km"+
+"<br><button onclick='route("+info.lat+","+info.lng+")'>Route</button></div>";
+});
+}
 
-document.getElementById("result").innerHTML=
-"<div class='card'>Address: "+info.address+
-"<br>Status: "+info.status+
-"<br>Note: "+info.note+
-"<br>Delivery Count: "+info.count+
-"<br>Distance: "+dist.toFixed(2)+" km"+
-"<br><button onclick='route("+info.lat+","+info.lng+")'>Open Route</button></div>";
+function detectGPS(){
+navigator.geolocation.getCurrentPosition(function(pos){
+if(marker) map.removeLayer(marker);
+marker=L.marker([pos.coords.latitude,pos.coords.longitude]).addTo(map);
+map.setView([pos.coords.latitude,pos.coords.longitude],15);
 });
 }
 
@@ -193,27 +191,68 @@ function route(lat,lng){
 window.open("https://www.google.com/maps/dir/?api=1&destination="+lat+","+lng);
 }
 
-function getDistance(lat1,lon1,lat2,lon2){
+function exportCSV(){
+let data=getData();
+let csv="Mobile,Address,Status,Note,Count\n";
+for(let m in data){
+let d=data[m];
+csv+=`${m},${d.address},${d.status},${d.note},${d.count}\n`;
+}
+download("data.csv",csv);
+}
+
+function backupData(){
+download("backup.json",JSON.stringify(getData()));
+}
+
+function restoreData(e){
+let file=e.target.files[0];
+let reader=new FileReader();
+reader.onload=function(){
+localStorage.setItem("deliveries",reader.result);
+alert("Restored!");
+};
+reader.readAsText(file);
+}
+
+function clearAll(){
+if(confirm("Delete all data?")){
+localStorage.removeItem("deliveries");
+alert("Cleared!");
+}
+}
+
+function download(name,text){
+let a=document.createElement("a");
+a.href=URL.createObjectURL(new Blob([text]));
+a.download=name;
+a.click();
+}
+
+function distance(lat1,lon1,lat2,lon2){
 let R=6371;
 let dLat=(lat2-lat1)*Math.PI/180;
 let dLon=(lon2-lon1)*Math.PI/180;
-let a=Math.sin(dLat/2)*Math.sin(dLat/2)+
+let a=Math.sin(dLat/2)**2+
 Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
-Math.sin(dLon/2)*Math.sin(dLon/2);
-let c=2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-return R*c;
+Math.sin(dLon/2)**2;
+return R*(2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)));
 }
 
-function toggleDark(){
-document.body.classList.toggle("dark");
+function getData(){return JSON.parse(localStorage.getItem("deliveries"))||{};}
+function setData(d){localStorage.setItem("deliveries",JSON.stringify(d));}
+function mobileField(){return document.getElementById("mobile").value.trim();}
+function addressField(){return document.getElementById("address").value.trim();}
+function fillForm(m,i){
+mobile.value=m;
+address.value=i.address;
+status.value=i.status;
+note.value=i.note;
 }
 
-if(localStorage.getItem("loggedIn")){
-document.getElementById("loginBox").classList.add("hidden");
-document.getElementById("adminPanel").classList.remove("hidden");
-document.getElementById("map").classList.remove("hidden");
-initMap();
-}
+function toggleDark(){document.body.classList.toggle("dark");}
+
+if(localStorage.getItem("loggedIn")) showPanel();
 
 </script>
 
