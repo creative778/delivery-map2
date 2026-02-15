@@ -5,7 +5,7 @@
 <title>Cloud Delivery Manager</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Leaflet map library -->
+<!-- Leaflet (map) -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
@@ -13,7 +13,7 @@
   body{font-family:Arial;margin:0;background:#f4f4f4}
   #map{height:350px}
   .container{padding:15px}
-  input,button,select,textarea{padding:8px;margin:5px;width:95%}
+  input,textarea,button{padding:8px;margin:5px;width:95%}
   button{background:#000;color:#fff;border:none;cursor:pointer}
   .card{background:#fff;padding:10px;margin:10px 0;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
   .hidden{display:none}
@@ -23,17 +23,16 @@
 <body>
 
 <div class="container">
-
   <h2>Cloud Delivery Manager</h2>
 
-  <!-- Login box -->
+  <!-- ===== Login form ===== -->
   <div id="loginBox">
-    <input type="text" id="email" placeholder="Username (e.g. admin@gmail.com)">
+    <input type="text" id="email" placeholder="Email (e.g. admin@gmail.com)">
     <input type="password" id="password" placeholder="Password">
     <button onclick="login()">Login</button>
   </div>
 
-  <!-- Main panel (hidden until login) -->
+  <!-- ===== Main panel (hidden until login) ===== -->
   <div id="panel" class="hidden">
 
     <h3>Add Delivery</h3>
@@ -50,7 +49,7 @@
 
     <hr>
 
-    <h3>Multiple Search (Max 50 comma‑separated)</h3>
+    <h3>Multiple Search (max 50 numbers, comma‑separated)</h3>
     <textarea id="multiSearch" rows="3"
               placeholder="017xxx,018xxx,…"></textarea>
     <button onclick="multiSearch()">Search &amp; Sort</button>
@@ -59,50 +58,49 @@
   </div>
 </div>
 
-<!-- Map (hidden until login) -->
+<!-- ===== Map (hidden until logged in) ===== -->
 <div id="map" class="hidden"></div>
 
-<!-- --------------------------------------------------------------- -->
-<!--   JavaScript – Firebase + Leaflet                               -->
-<!-- --------------------------------------------------------------- -->
 <script type="module">
-  // ----- Firebase SDK imports -------------------------------------------------
+  // ---------- Firebase SDK imports ----------
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-  import { getFirestore, collection, setDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+  import { getFirestore, setDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
   import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
-  // ----- Your Firebase project configuration ---------------------------------
+  // ---------- Your Firebase project config ----------
   const firebaseConfig = {
     apiKey: "AIzaSyA82YWF574aCnkYdwN0airAcFl-_M21sHM",
     authDomain: "delivery-map-pro.firebaseapp.com",
     projectId: "delivery-map-pro",
     storageBucket: "delivery-map-pro.firebasestorage.app",
     messagingSenderId: "544868009171",
-    appId: "1:544868009171:web:e416002a340d96400b8026"
+    appId: "1:544868009171:web:e416002a340d96400b8026",
+    measurementId: "G-NQX3MRD5HP"
   };
 
-  // ----- Initialise Firebase ----------------------------------------------------
+  // ---------- Initialise Firebase ----------
   const app   = initializeApp(firebaseConfig);
   const db    = getFirestore(app);
   const auth  = getAuth(app);
+  // expose auth globally – handy for console debugging
+  window.auth = auth;
 
-  // ----- Initialise Leaflet map -------------------------------------------------
+  // ---------- Initialise Leaflet ----------
   const map = L.map('map').setView([23.8103, 90.4125], 12);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
     .addTo(map);
-
-  let marker; // the temporary marker the user clicks on
+  let marker; // will hold the temporary map marker
 
   map.on('click', e => {
     if (marker) map.removeLayer(marker);
     marker = L.marker(e.latlng).addTo(map);
   });
 
-  // ---------------------------------------------------------------------------
-  // --------------------------- UI Functions ---------------------------------
-  // ---------------------------------------------------------------------------
+  // -----------------------------------------------------------------
+  // ========================= UI FUNCTIONS ==========================
+  // -----------------------------------------------------------------
 
-  // ---- Login ---------------------------------------------------------------
+  // ---- Login -------------------------------------------------------
   window.login = async function () {
     try {
       await signInWithEmailAndPassword(
@@ -120,15 +118,15 @@
     }
   };
 
-  // ---- Save a delivery -------------------------------------------------------
+  // ---- Save a delivery ---------------------------------------------
   window.saveDelivery = async function () {
     if (!marker) {
-      alert("Please click on the map to select a location first.");
+      alert("Click on the map to set the delivery location first.");
       return;
     }
     const mobile = document.getElementById("mobile").value.trim();
     if (!mobile) {
-      alert("Mobile number required.");
+      alert("Mobile number is required.");
       return;
     }
     const data = {
@@ -142,7 +140,7 @@
     alert("Saved to Cloud");
   };
 
-  // ---- Single search ---------------------------------------------------------
+  // ---- Single search ------------------------------------------------
   window.singleSearch = async function () {
     const mobile = document.getElementById("singleSearch").value.trim();
     if (!mobile) {
@@ -158,13 +156,13 @@
     document.getElementById("result").innerHTML = `<p>Found delivery for ${docSnap.data().customerName}</p>`;
   };
 
-  // ---- Multiple search -------------------------------------------------------
+  // ---- Multiple search (max 50) -------------------------------------
   window.multiSearch = async function () {
-    const raw   = document.getElementById("multiSearch").value;
+    const raw = document.getElementById("multiSearch").value;
     const numbers = raw.split(",")
                        .map(n => n.trim())
                        .filter(n => n !== "")
-                       .slice(0, 50); // enforce max 50
+                       .slice(0, 50);                // enforce the limit
 
     if (numbers.length === 0) {
       alert("Enter at least one mobile number.");
@@ -172,9 +170,8 @@
     }
 
     const unmatched = [];
-    const found     = [];
+    const found = [];
 
-    // fetch each entry
     for (const num of numbers) {
       const d = await getDoc(doc(db, "deliveries", num));
       if (d.exists()) {
@@ -184,7 +181,7 @@
       }
     }
 
-    // Get current GPS location for sorting
+    // Get the device's current GPS location for distance sorting
     navigator.geolocation.getCurrentPosition(pos => {
       const { latitude, longitude } = pos.coords;
       found.sort((a, b) => {
@@ -194,9 +191,8 @@
       });
 
       const resultDiv = document.getElementById("result");
-      resultDiv.innerHTML = ""; // clear previous
+      resultDiv.innerHTML = "";
 
-      // render found deliveries
       found.forEach((f, i) => {
         resultDiv.innerHTML += `
           <div class="card">
@@ -206,7 +202,6 @@
           </div>`;
       });
 
-      // render unmatched numbers, if any
       if (unmatched.length) {
         resultDiv.innerHTML += `
           <div class="card">
@@ -215,9 +210,10 @@
           </div>`;
       }
     }, err => {
-      // If GPS fails, just show unsorted results
-      alert("Could not get current location – showing unsorted list.");
-      document.getElementById("result").innerHTML = found.map((f, i) => `
+      // If geolocation fails, just show the unsorted list
+      alert("Could not get current location – showing unsorted results.");
+      const resultDiv = document.getElementById("result");
+      resultDiv.innerHTML = found.map((f, i) => `
         <div class="card">
           <strong>${i + 1}. ${f.customerName} (${f.mobile})</strong><br>
           ${f.address}<br>
@@ -226,21 +222,21 @@
     });
   };
 
-  // ---- Show a single delivery on map ----------------------------------------
+  // ---- Show a single delivery on the map ---------------------------
   function showOnMap(data) {
     map.setView([data.lat, data.lng], 15);
     if (marker) map.removeLayer(marker);
     marker = L.marker([data.lat, data.lng]).addTo(map);
   }
 
-  // ---- Open Google Maps route -----------------------------------------------
+  // ---- Open Google Maps routing ------------------------------------
   window.route = function (lat, lng) {
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
   };
 
-  // ---- Haversine distance (km) ---------------------------------------------
+  // ---- Haversine distance (km) ------------------------------------
   function distance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Earth radius in km
+    const R = 6371; // Earth's radius in km
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a = Math.sin(dLat / 2) ** 2 +
