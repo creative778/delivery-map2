@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Cloud Delivery Manager</title>
+<title>Delivery Map Ultimate – Firebase Edition</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Leaflet for the map -->
+<!-- Leaflet (map) -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
@@ -56,13 +56,13 @@ input,textarea,select,button{
   font-size:1rem;
 }
 button{
-  background:#000;
+  background:#222;
   color:#fff;
   border:none;
   cursor:pointer;
   transition:background .2s;
 }
-button:hover{background:#333;}
+button:hover{background:#444;}
 .smallbtn{
   width:auto;
   padding:6px 12px;
@@ -80,15 +80,14 @@ button:hover{background:#333;}
 }
 .dark .card{background:#222;}
 .hidden{display:none;}
-#map{height:380px;margin-top:10px;}
-
+#map{height:350px;margin-top:10px;}
 /* --------------------------------------------------------------
-   Toast (slide‑in)
+   Toast notification (slide‑in)
    -------------------------------------------------------------- */
 #toast{
   position:fixed;
   bottom:20px;
-  right:-300px;               /* start hidden */
+  right:-300px;               /* start off‑screen */
   background:#4caf50;
   color:#fff;
   padding:12px 18px;
@@ -103,28 +102,19 @@ button:hover{background:#333;}
   right:20px;
   opacity:1;
 }
-
 /* --------------------------------------------------------------
    Bouncing live‑icon
    -------------------------------------------------------------- */
 @keyframes bounce{
-  0%   {transform: translateY(0);}
-  30%  {transform: translateY(-12px);}
-  50%  {transform: translateY(0);}
-  70%  {transform: translateY(-6px);}
-  100% {transform: translateY(0);}
+  0%   {transform:translateY(0);}
+  30%  {transform:translateY(-12px);}
+  50%  {transform:translateY(0);}
+  70%  {transform:translateY(-6px);}
+  100% {transform:translateY(0);}
 }
-.leaflet-marker-icon.bouncing{
-  animation:bounce 1s infinite;
-}
-
-/* --------------------------------------------------------------
-   Responsive tweaks
-   -------------------------------------------------------------- */
+.leaflet-marker-icon.bouncing{animation:bounce 1s infinite;}
 @media (max-width:500px){
-  input,textarea,select,button{
-    max-width:100%;
-  }
+  input,textarea,select,button{max-width:100%;}
   .topbar{font-size:1rem;}
 }
 </style>
@@ -133,7 +123,7 @@ button:hover{background:#333;}
 <body>
 
 <div class="topbar">
-  Cloud Delivery Manager
+  Delivery Map Ultimate – Firebase Edition
   <span class="toggle" onclick="toggleDark()">🌙</span>
 </div>
 
@@ -142,7 +132,7 @@ button:hover{background:#333;}
   <!-- ===================== LOGIN ===================== -->
   <div id="loginBox">
     <h3>Login</h3>
-    <input type="text" id="email" placeholder="Email (e.g. admin@gmail.com)">
+    <input type="text" id="username" placeholder="Email (e.g. admin@gmail.com)">
     <input type="password" id="password" placeholder="Password">
     <button onclick="login()">Login</button>
   </div>
@@ -158,33 +148,27 @@ button:hover{background:#333;}
     <h3>Add / Update Delivery</h3>
 
     <input type="text" id="mobile" placeholder="Mobile Number (unique ID)">
-    <input type="text" id="customerName" placeholder="Customer Name">
-    <input type="text" id="address" placeholder="Address">
-    <input type="text" id="tags" placeholder="Tags (comma‑separated, e.g. priority,food)">
-    <textarea id="note" rows="2" placeholder="Note (optional)"></textarea>
-    <input type="text" id="status" placeholder="Status (e.g. In‑Transit, Completed)">
+    <input type="text" id="address" placeholder="Full Address">
+    <select id="status">
+      <option>Pending</option>
+      <option>Delivered</option>
+      <option>Returned</option>
+    </select>
+    <input type="text" id="note" placeholder="Note (optional)">
 
-    <button onclick="saveDelivery()">Save New</button>
-    <button onclick="updateDelivery()">Update</button>
-    <button onclick="deleteDelivery()">Delete</button>
+    <button onclick="saveData()">Save New</button>
+    <button onclick="updateData()">Update Status</button>
+    <button onclick="deleteData()">Delete</button>
     <button onclick="detectGPS()">Auto Detect GPS</button>
 
     <hr>
 
-    <!-- ==== Single Search ==== -->
+    <!-- ==== Search by Mobile ==== -->
     <h3>Search by Mobile</h3>
-    <input type="text" id="singleSearch" placeholder="Enter Mobile">
-    <button onclick="singleSearch()">Search</button>
+    <input type="text" id="searchMobile" placeholder="Enter Mobile">
+    <button onclick="searchData()">Search</button>
 
     <div id="result"></div>
-
-    <hr>
-
-    <!-- ==== Multiple Search ==== -->
-    <h3>Multiple Search (max 50, comma‑separated)</h3>
-    <textarea id="multiSearch" rows="3"
-              placeholder="017xxx,018xxx,…"></textarea>
-    <button onclick="multiSearch()">Search &amp; Sort</button>
 
     <hr>
 
@@ -193,7 +177,7 @@ button:hover{background:#333;}
     <button onclick="exportCSV()" class="smallbtn">Export CSV</button>
     <button onclick="backupData()" class="smallbtn">Backup JSON</button>
     <input type="file" onchange="restoreData(event)" class="smallbtn">
-    <button onclick="clearAll()" class="smallbtn">Clear All</button>
+    <button onclick="clearAll()" class="smallbtn">Clear All Data</button>
 
   </div>
 </div>
@@ -204,9 +188,6 @@ button:hover{background:#333;}
 <!-- Toast for feedback -->
 <div id="toast"></div>
 
-<!-- --------------------------------------------------------------
-     Firebase SDK + App Logic
-     -------------------------------------------------------------- -->
 <script type="module">
 /* --------------------------------------------------------------
    Firebase SDK imports
@@ -233,23 +214,23 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
 /* --------------------------------------------------------------
-   👉 YOUR FIREBASE CONFIG  (replace with your own values)
+   👉 YOUR FIREBASE CONFIG – paste the block you copied from the console
    -------------------------------------------------------------- */
 const firebaseConfig = {
-  apiKey: "AIzaSyA82YWF574aCnkYdwN0airAcFl-_M21sHM",
-  authDomain: "delivery-map-pro.firebaseapp.com",
-  projectId: "delivery-map-pro",
-  storageBucket: "delivery-map-pro.firebasestorage.app",
-  messagingSenderId: "544868009171",
-  appId: "1:544868009171:web:e416002a340d96400b8026",
-  measurementId: "G-NQX3MRD5HP"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID",
+  measurementId: "YOUR_MEASUREMENT_ID"
 };
 
 /* --------------------------------------------------------------
    Initialise Firebase + Analytics
    -------------------------------------------------------------- */
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);      // analytics is optional – keeps no personal data
+const analytics = getAnalytics(app);      // optional, no personal data collected
 const db = getFirestore(app);
 const auth = getAuth(app);
 window.auth = auth;   // expose for console debugging
@@ -263,22 +244,22 @@ function showToast(msg){
   const toast = document.getElementById('toast');
   toast.textContent = msg;
   toast.classList.add('toast-show');
-  setTimeout(()=>{ toast.classList.remove('toast-show'); }, 3000);
+  setTimeout(()=>{ toast.classList.remove('toast-show'); },3000);
 }
 
 /* --------------------------------------------------------------
-   Permission helper – graceful handling of geolocation denial
+   Geolocation permission helper (nice UX)
    -------------------------------------------------------------- */
 async function ensureGeolocationPermission(){
-  if (!navigator.geolocation) {
-    alert('Geolocation is not supported on this device.');
+  if (!navigator.geolocation){
+    alert('Geolocation not supported on this device.');
     return false;
   }
-  if (navigator.permissions) {
+  if (navigator.permissions){
     try{
-      const result = await navigator.permissions.query({name:'geolocation'});
-      if (result.state === 'denied'){
-        alert('Geolocation is blocked for this site. Please enable it in your browser settings and reload.');
+      const r = await navigator.permissions.query({name:'geolocation'});
+      if (r.state === 'denied'){
+        alert('Geolocation is blocked for this site. Please enable it in browser settings and reload.');
         return false;
       }
     }catch(e){ /* ignore – fallback to normal request */ }
@@ -290,7 +271,7 @@ async function ensureGeolocationPermission(){
    AUTH – login / logout / change password
    -------------------------------------------------------------- */
 window.login = async function(){
-  const email = document.getElementById('email').value.trim();
+  const email = document.getElementById('username').value.trim();
   const pwd   = document.getElementById('password').value;
   try{
     await signInWithEmailAndPassword(auth,email,pwd);
@@ -314,7 +295,7 @@ window.changePassword = async function(){
   const newPass = prompt('Enter new password:');
   if(!newPass) return;
   try{
-    await updatePassword(auth.currentUser, newPass);
+    await updatePassword(auth.currentUser,newPass);
     alert('Password changed!');
     showToast('✅ Password updated');
   }catch(e){
@@ -324,38 +305,34 @@ window.changePassword = async function(){
 };
 
 /* --------------------------------------------------------------
-   MAP & Live‑Tracking
+   MAP & marker handling
    -------------------------------------------------------------- */
-let map, myMarker;
-let liveWatchId = null;               // watchPosition ID
-const liveMarkers = new Map();        // mobile → Leaflet marker
+let map, marker;          // marker for the *current* delivery (add / update)
+let liveWatchId = null;   // ID from watchPosition
+const liveMarkers = new Map();
 
 function initMap(){
   map = L.map('map').setView([23.8103,90.4125],12);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
     .addTo(map);
 
-  // Click to set a static delivery location (used by Save/Update)
+  // Click → static location for Save / Update
   map.on('click', e=>{
-    if(myMarker) map.removeLayer(myMarker);
-    myMarker = L.marker(e.latlng,{draggable:true}).addTo(map);
+    if(marker) map.removeLayer(marker);
+    marker = L.marker(e.latlng,{draggable:true}).addTo(map);
   });
 
-  // Real‑time live‑tracking updates from Firestore
-  const deliveriesRef = collection(db, "deliveries");
+  // Real‑time listener for live‑tracking markers (any delivery that has liveLat/liveLng)
+  const deliveriesRef = collection(db,'deliveries');
   onSnapshot(deliveriesRef, snap=>{
     snap.docChanges().forEach(change=>{
       const data = change.doc.data();
       const mobile = data.mobile;
-
-      // Remove marker if doc deleted or live data cleared
       if(change.type==="removed" || !data.liveLat || !data.liveLng){
         const old = liveMarkers.get(mobile);
         if(old){ map.removeLayer(old); liveMarkers.delete(mobile); }
         return;
       }
-
-      // Add / update live marker (bouncing animation)
       const latLng = [data.liveLat, data.liveLng];
       if(liveMarkers.has(mobile)){
         liveMarkers.get(mobile).setLatLng(latLng);
@@ -370,7 +347,7 @@ function initMap(){
   });
 }
 
-/* Live‑tracking icon */
+/* Icon for live‑tracking */
 function liveIcon(){
   return L.icon({
     iconUrl:"https://cdn-icons-png.flaticon.com/512/684/684908.png",
@@ -380,27 +357,25 @@ function liveIcon(){
 }
 
 /* --------------------------------------------------------------
-   Live‑Tracking start / stop
+   Live‑Tracking (pushes your position to Firestore)
    -------------------------------------------------------------- */
 window.toggleLiveTracking = async function(){
   const btn = document.getElementById('trackBtn');
 
   if(liveWatchId===null){
-    // ---- START ----
-    const allowed = await ensureGeolocationPermission();
-    if(!allowed) return;
+    const ok = await ensureGeolocationPermission();
+    if(!ok) return;
 
     liveWatchId = navigator.geolocation.watchPosition(async pos=>{
       const {latitude,longitude} = pos.coords;
-
-      // Update your own marker
-      if(myMarker) map.removeLayer(myMarker);
-      myMarker = L.marker([latitude,longitude],{icon:liveIcon()})
+      // Show your own moving marker
+      if(marker) map.removeLayer(marker);
+      marker = L.marker([latitude,longitude],{icon:liveIcon()})
         .bindPopup('You (Live)')
         .addTo(map);
       map.setView([latitude,longitude],15);
 
-      // Push live position to Firestore (keyed by the mobile you typed)
+      // Write live coordinates under the mobile you typed
       const mobile = document.getElementById('mobile').value.trim();
       if(mobile){
         const ref = doc(db,'deliveries',mobile);
@@ -411,20 +386,19 @@ window.toggleLiveTracking = async function(){
           liveTimestamp: Date.now()
         },{merge:true});
       }
-    }, err=>{ alert('Live‑tracking error: '+err.message); },
+    }, err=>alert('Live‑tracking error: '+err.message),
     {enableHighAccuracy:true});
 
     btn.textContent = 'Stop Live‑Tracking';
     btn.style.background = '#c62828';
     showToast('📍 Live‑tracking started');
   }else{
-    // ---- STOP ----
     navigator.geolocation.clearWatch(liveWatchId);
     liveWatchId = null;
     btn.textContent = 'Start Live‑Tracking';
     btn.style.background = '';
 
-    // Optionally clear live data for the current mobile
+    // Optionally clear live data from Firestore for this mobile
     const mobile = document.getElementById('mobile').value.trim();
     if(mobile){
       const ref = doc(db,'deliveries',mobile);
@@ -435,30 +409,39 @@ window.toggleLiveTracking = async function(){
 };
 
 /* --------------------------------------------------------------
-   CRUD – Delivery
+   CRUD – Delivery (add / update / delete)
    -------------------------------------------------------------- */
 function deliveryRef(mobile){ return doc(db,'deliveries',mobile); }
 
-window.saveDelivery = async function(){
-  if(!myMarker){
+window.saveData = async function(){
+  if(!marker){
     alert('Click on the map to set a location first.');
     return;
   }
-  const mobile = document.getElementById('mobile').value.trim();
-  if(!mobile){ alert('Mobile number required.'); return; }
+  const mobile  = document.getElementById('mobile').value.trim();
+  const address = document.getElementById('address').value.trim();
+  if(!mobile || !address){
+    alert('Mobile & address are required.');
+    return;
+  }
 
+  const snap = await getDoc(deliveryRef(mobile));
+  if(snap.exists()){
+    alert('Number already exists – use Update instead.');
+    return;
+  }
+
+  const latlng = marker.getLatLng();
   const data = {
     mobile,
-    customerName: document.getElementById('customerName').value.trim(),
-    address:       document.getElementById('address').value.trim(),
-    tags:          (document.getElementById('tags').value || '').split(',')
-                    .map(t=>t.trim()).filter(t=>t),
-    note:          document.getElementById('note').value.trim(),
-    status:        document.getElementById('status').value.trim(),
-    lat:           myMarker.getLatLng().lat,
-    lng:           myMarker.getLatLng().lng,
-    createdAt:     Date.now(),
-    count:         1
+    address,
+    status: document.getElementById('status').value,
+    note:   document.getElementById('note').value.trim(),
+    lat:    latlng.lat,
+    lng:    latlng.lng,
+    createdAt: Date.now(),
+    count: 1,
+    customerName: ''   // you can extend later
   };
   try{
     await setDoc(deliveryRef(mobile), data);
@@ -469,9 +452,9 @@ window.saveDelivery = async function(){
   }
 };
 
-window.updateDelivery = async function(){
+window.updateData = async function(){
   const mobile = document.getElementById('mobile').value.trim();
-  if(!mobile){ alert('Mobile number required.'); return; }
+  if(!mobile){ alert('Mobile required.'); return; }
 
   const ref = deliveryRef(mobile);
   const snap = await getDoc(ref);
@@ -481,18 +464,15 @@ window.updateDelivery = async function(){
   }
 
   const updates = {
-    customerName: document.getElementById('customerName').value.trim(),
-    address:       document.getElementById('address').value.trim(),
-    tags:          (document.getElementById('tags').value || '').split(',')
-                    .map(t=>t.trim()).filter(t=>t),
-    note:          document.getElementById('note').value.trim(),
-    status:        document.getElementById('status').value.trim(),
-    updatedAt:     Date.now(),
-    count:         (snap.data().count||0)+1
+    status: document.getElementById('status').value,
+    note:   document.getElementById('note').value.trim(),
+    updatedAt: Date.now(),
+    count: (snap.data().count||0)+1
   };
-  if(myMarker){
-    updates.lat = myMarker.getLatLng().lat;
-    updates.lng = myMarker.getLatLng().lng;
+  if(marker){
+    const ll = marker.getLatLng();
+    updates.lat = ll.lat;
+    updates.lng = ll.lng;
   }
   try{
     await updateDoc(ref, updates);
@@ -503,9 +483,9 @@ window.updateDelivery = async function(){
   }
 };
 
-window.deleteDelivery = async function(){
+window.deleteData = async function(){
   const mobile = document.getElementById('mobile').value.trim();
-  if(!mobile){ alert('Mobile number required.'); return; }
+  if(!mobile){ alert('Mobile required.'); return; }
   if(!confirm('Delete this delivery?')) return;
   try{
     await deleteDoc(deliveryRef(mobile));
@@ -517,131 +497,55 @@ window.deleteDelivery = async function(){
 };
 
 /* --------------------------------------------------------------
-   One‑time GPS detection
+   Auto‑detect GPS (one‑time)
    -------------------------------------------------------------- */
 window.detectGPS = async function(){
-  const allowed = await ensureGeolocationPermission();
-  if(!allowed) return;
+  const ok = await ensureGeolocationPermission();
+  if(!ok) return;
 
   navigator.geolocation.getCurrentPosition(pos=>{
     const {latitude,longitude} = pos.coords;
-    if(myMarker) map.removeLayer(myMarker);
-    myMarker = L.marker([latitude,longitude]).addTo(map);
+    if(marker) map.removeLayer(marker);
+    marker = L.marker([latitude,longitude]).addTo(map);
     map.setView([latitude,longitude],15);
     showToast('📍 GPS location set');
   }, err=>alert('GPS error: '+err.message));
 };
 
 /* --------------------------------------------------------------
-   SEARCH – single
+   Search by mobile (single)
    -------------------------------------------------------------- */
-window.singleSearch = async function(){
-  const mobile = document.getElementById('singleSearch').value.trim();
+window.searchData = async function(){
+  const mobile = document.getElementById('searchMobile').value.trim();
   if(!mobile){ alert('Enter a mobile number.'); return; }
   const snap = await getDoc(deliveryRef(mobile));
   if(!snap.exists()){
     document.getElementById('result').innerHTML = '<p>No data found.</p>';
     return;
   }
-  const data = snap.data();
-  showOnMap(data);
-  renderSingleCard(data);
-};
+  const info = snap.data();
 
-function showOnMap(data){
-  map.setView([data.lat, data.lng],15);
-  if(myMarker) map.removeLayer(myMarker);
-  myMarker = L.marker([data.lat, data.lng]).addTo(map);
-}
+  // Fill the form so the user can edit if needed
+  document.getElementById('mobile').value = mobile;
+  document.getElementById('address').value = info.address;
+  document.getElementById('status').value = info.status;
+  document.getElementById('note').value   = info.note || '';
 
-/* Render a card for a single delivery (distance + navigate) */
-function renderSingleCard(d){
-  const container = document.getElementById('result');
+  // Show on map
+  map.setView([info.lat,info.lng],15);
+  if(marker) map.removeLayer(marker);
+  marker = L.marker([info.lat,info.lng]).addTo(map);
+
+  // Distance from user (if geolocation allowed)
+  const resultDiv = document.getElementById('result');
   if(!navigator.geolocation){
-    container.innerHTML = buildCard(d,'N/A');
+    resultDiv.innerHTML = buildCard(info,'N/A');
     return;
   }
   navigator.geolocation.getCurrentPosition(pos=>{
-    const dist = distance(pos.coords.latitude,pos.coords.longitude,d.lat,d.lng)
-                  .toFixed(2);
-    container.innerHTML = buildCard(d,dist);
-  },()=>{ container.innerHTML = buildCard(d,'N/A'); });
-}
-
-/* --------------------------------------------------------------
-   SEARCH – multiple (max 50)
-   -------------------------------------------------------------- */
-window.multiSearch = async function(){
-  const raw = document.getElementById('multiSearch').value;
-  const nums = raw.split(',').map(n=>n.trim()).filter(n=>n).slice(0,50);
-  if(nums.length===0){ alert('Enter at least one mobile number.'); return; }
-
-  const found = [], notFound = [];
-
-  for(const num of nums){
-    const snap = await getDoc(deliveryRef(num));
-    if(snap.exists()){
-      found.push(snap.data());
-    }else{
-      notFound.push(num);
-    }
-  }
-
-  if(!navigator.geolocation){
-    renderMultiCards(found,notFound,null);
-    return;
-  }
-  navigator.geolocation.getCurrentPosition(pos=>{
-    renderMultiCards(found,notFound,{lat:pos.coords.latitude,lng:pos.coords.longitude});
-  },()=>{ renderMultiCards(found,notFound,null); });
-};
-
-function renderMultiCards(found,notFound,curPos){
-  const container = document.getElementById('result');
-  container.innerHTML = '';
-
-  // Sort by distance if we have the user’s location
-  if(curPos){
-    found.sort((a,b)=> distance(curPos.lat,curPos.lng,a.lat,a.lng)
-                      - distance(curPos.lat,curPos.lng,b.lat,b.lng));
-  }
-
-  found.forEach((d,i)=>{
-    const dist = curPos ? distance(curPos.lat,curPos.lng,d.lat,d.lng).toFixed(2) : 'N/A';
-    container.innerHTML += `
-      <div class="card">
-        <b>${i+1}. ${d.customerName || ''} (${d.mobile})</b><br>
-        ${d.address}<br>
-        <b>Tags:</b> ${d.tags ? d.tags.join(', ') : ''}<br>
-        <b>Note:</b> ${d.note || ''}<br>
-        <b>Status:</b> ${d.status || ''}<br>
-        <b>Count:</b> ${d.count||0}<br>
-        <b>Distance:</b> ${dist} km<br>
-        <button class="smallbtn" onclick="route(${d.lat},${d.lng})">Navigate →</button>
-      </div>`;
-  });
-
-  if(notFound.length){
-    container.innerHTML += `
-      <div class="card"><b>Numbers not found:</b><br>${notFound.join(', ')}</div>`;
-  }
-}
-
-/* --------------------------------------------------------------
-   Routing – opens Google Maps directions
-   -------------------------------------------------------------- */
-window.route = function(lat,lng){
-  if(!navigator.geolocation){
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
-    return;
-  }
-  navigator.geolocation.getCurrentPosition(pos=>{
-    const origin = `${pos.coords.latitude},${pos.coords.longitude}`;
-    const dest   = `${lat},${lng}`;
-    window.open(`https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}`);
-  },()=>{ // fallback if geolocation blocked at this moment
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
-  });
+    const dist = distance(pos.coords.latitude,pos.coords.longitude,info.lat,info.lng).toFixed(2);
+    resultDiv.innerHTML = buildCard(info,dist);
+  },()=>{ resultDiv.innerHTML = buildCard(info,'N/A'); });
 };
 
 /* --------------------------------------------------------------
@@ -649,12 +553,11 @@ window.route = function(lat,lng){
    -------------------------------------------------------------- */
 window.exportCSV = async function(){
   const snap = await getDocs(collection(db,'deliveries'));
-  let csv = "Mobile,Customer Name,Address,Tags,Note,Status,Count,Lat,Lng\n";
+  let csv = "Mobile,Address,Status,Note,Count,Lat,Lng\n";
   snap.forEach(docSnap=>{
     const d = docSnap.data();
-    const tags = d.tags ? d.tags.join('|') : '';
     const note = d.note ? `"${d.note.replace(/"/g,'""')}"` : '';
-    csv += `${d.mobile},${d.customerName||''},${d.address||''},${tags},${note},${d.status||''},${d.count||0},${d.lat||''},${d.lng||''}\n`;
+    csv += `${docSnap.id},${d.address},${d.status},${note},${d.count||0},${d.lat||''},${d.lng||''}\n`;
   });
   download('deliveries.csv',csv);
 };
@@ -717,17 +620,14 @@ function distance(lat1,lon1,lat2,lon2){
 }
 
 /* --------------------------------------------------------------
-   Card builder (single & multi)
+   Card builder (used in search results)
    -------------------------------------------------------------- */
 function buildCard(d,dist){
   return `
     <div class="card">
-      <b>Customer:</b> ${d.customerName||''}<br>
-      <b>Mobile:</b> ${d.mobile}<br>
       <b>Address:</b> ${d.address}<br>
-      <b>Tags:</b> ${d.tags ? d.tags.join(', ') : ''}<br>
-      <b>Note:</b> ${d.note||''}<br>
-      <b>Status:</b> ${d.status||''}<br>
+      <b>Status:</b> ${d.status}<br>
+      <b>Note:</b> ${d.note || ''}<br>
       <b>Count:</b> ${d.count||0}<br>
       <b>Distance:</b> ${dist} km<br>
       <button class="smallbtn" onclick="route(${d.lat},${d.lng})">Navigate →</button>
@@ -735,7 +635,24 @@ function buildCard(d,dist){
 }
 
 /* --------------------------------------------------------------
-   Auto‑login handling (if already logged in)
+   Routing – open Google Maps with origin → destination
+   -------------------------------------------------------------- */
+window.route = function(lat,lng){
+  if(!navigator.geolocation){
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const origin = `${pos.coords.latitude},${pos.coords.longitude}`;
+    const dest   = `${lat},${lng}`;
+    window.open(`https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}`);
+  },()=>{ // fallback if geolocation still denied
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
+  });
+};
+
+/* --------------------------------------------------------------
+   Auto‑login handling (if user already signed in)
    -------------------------------------------------------------- */
 if(auth.currentUser){
   document.getElementById('loginBox').classList.add('hidden');
@@ -744,5 +661,6 @@ if(auth.currentUser){
   initMap();
 }
 </script>
+
 </body>
 </html>
