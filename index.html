@@ -42,6 +42,8 @@
   }
   .container{
     padding:15px;
+    max-width:800px;
+    margin:auto;
   }
   input,textarea,select,button{
     width:100%;
@@ -74,27 +76,41 @@
     border-radius:6px;
     box-shadow:0 2px 6px rgba(0,0,0,.08);
     line-height:1.4;
+    word-break:break-word;
   }
   .dark .card{background:#222;}
   .hidden{display:none;}
   #map{height:380px;margin-top:10px;}
   /* --------------------------------------------------------------
-     Toast notification
+     Toast notification – slide‑in from bottom‑right
      -------------------------------------------------------------- */
   #toast{
     position:fixed;
     bottom:20px;
-    right:20px;
+    right:-300px;                 /* start off‑screen */
     background:#4caf50;
     color:#fff;
     padding:12px 18px;
     border-radius:4px;
     box-shadow:0 2px 6px rgba(0,0,0,.2);
-    opacity:0;
-    transition:opacity .3s;
+    transition:right .4s, opacity .4s;
     z-index:1000;
+    opacity:0;
   }
   .dark #toast{background:#81c784;}
+  .toast-show{
+    right:20px;
+    opacity:1;
+  }
+  /* --------------------------------------------------------------
+     Responsive tweaks
+     -------------------------------------------------------------- */
+  @media (max-width:500px){
+    input,textarea,select,button{
+      max-width:100%;
+    }
+    .topbar{font-size:1rem;}
+  }
 </style>
 </head>
 
@@ -124,11 +140,15 @@
 
     <!-- ==== Add / Update Delivery ==== -->
     <h3>Add / Update Delivery</h3>
-    <input type="text" id="mobile" placeholder="Mobile Number">
+
+    <input type="text" id="mobile" placeholder="Mobile Number (unique ID)">
     <input type="text" id="customerName" placeholder="Customer Name">
     <input type="text" id="address" placeholder="Address">
-    <input type="text" id="tags" placeholder="Tags (comma‑separated)">
+    <input type="text" id="tags" placeholder="Tags (comma‑separated, e.g. priority,food)">
     <textarea id="note" rows="2" placeholder="Note (optional)"></textarea>
+
+    <!-- Optional future‑proof “status” field – you can hide it if you don’t need it -->
+    <input type="text" id="status" placeholder="Status (e.g. In‑Transit, Completed)">
 
     <button onclick="saveDelivery()">Save New</button>
     <button onclick="updateDelivery()">Update</button>
@@ -188,7 +208,8 @@ import {
   query,
   where,
   orderBy,
-  limit
+  limit,
+  deleteField
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 import {
   getAuth,
@@ -230,10 +251,10 @@ function initMap(){
   // Click to set a static delivery location (used by Save/Update)
   map.on('click', e=>{
     if(myMarker) map.removeLayer(myMarker);
-    myMarker = L.marker(e.latlng).addTo(map);
+    myMarker = L.marker(e.latlng,{draggable:true}).addTo(map);
   });
 
-  // Listen to real‑time updates of *any* delivery that has liveLat/liveLng
+  // Listen to real‑time updates of any delivery that has liveLat/liveLng
   const deliveriesRef = collection(db, "deliveries");
   onSnapshot(deliveriesRef, snap=>{
     snap.docChanges().forEach(change=>{
@@ -245,12 +266,12 @@ function initMap(){
         if(old){ map.removeLayer(old); liveMarkers.delete(mobile); }
         return;
       }
-      // Add / update live marker
+      // Add / update live marker (bouncing animation for visibility)
       const latLng = [data.liveLat, data.liveLng];
       if(liveMarkers.has(mobile)){
         liveMarkers.get(mobile).setLatLng(latLng);
       }else{
-        const lm = L.marker(latLng,{icon:liveIcon()})
+        const lm = L.marker(latLng,{icon:liveIcon(), bounceOnAdd:true})
           .bindPopup(`<b>${data.customerName||''}</b><br>${mobile}`)
           .addTo(map);
         liveMarkers.set(mobile,lm);
@@ -275,12 +296,12 @@ function toggleDark(){
   document.body.classList.toggle('dark');
 }
 
-/* Simple toast */
+/* Simple toast – slide‑in & auto‑hide */
 function showToast(msg){
   const toast = document.getElementById('toast');
   toast.textContent = msg;
-  toast.style.opacity = '1';
-  setTimeout(()=>{ toast.style.opacity='0'; }, 2500);
+  toast.classList.add('toast-show');
+  setTimeout(()=>{ toast.classList.remove('toast-show'); }, 3000);
 }
 
 /* --------------------------------------------------------------
@@ -296,6 +317,7 @@ window.login = async function(){
     document.getElementById('panel').classList.remove('hidden');
     document.getElementById('map').classList.remove('hidden');
     initMap();
+    showToast('✅ Logged in');
   }catch(e){
     alert('Login failed – check email/password.');
     console.error(e);
@@ -313,6 +335,7 @@ window.changePassword = async function(){
   try{
     await updatePassword(auth.currentUser, newPass);
     alert('Password changed!');
+    showToast('✅ Password updated');
   }catch(e){
     alert('Could not change password – please re‑login then try again.');
     console.error(e);
@@ -322,7 +345,7 @@ window.changePassword = async function(){
 /* --------------------------------------------------------------
    LIVE‑TRACKING – start / stop watchPosition
    -------------------------------------------------------------- */
-window.toggleLiveTracking = function(){
+window.toggleLiveTracking = async function(){
   const btn = document.getElementById('trackBtn');
   if(liveWatchId===null){
     // start watching
@@ -349,9 +372,10 @@ window.toggleLiveTracking = function(){
           liveTimestamp: Date.now()
         },{merge:true});
       }
-    }, err=>alert('Live‑tracking error: '+err.message),{enableHighAccuracy:true});
+    }, err=>{ alert('Live‑tracking error: '+err.message); },{enableHighAccuracy:true});
     btn.textContent = 'Stop Live‑Tracking';
     btn.style.background = '#c62828';
+    showToast('📍 Live‑tracking started');
   }else{
     // stop watching
     navigator.geolocation.clearWatch(liveWatchId);
@@ -364,6 +388,7 @@ window.toggleLiveTracking = function(){
       const ref = doc(db,'deliveries',mobile);
       await updateDoc(ref,{liveLat:deleteField(),liveLng:deleteField(),liveTimestamp:deleteField()});
     }
+    showToast('🛑 Live‑tracking stopped');
   }
 };
 
@@ -387,13 +412,19 @@ window.saveDelivery = async function(){
     tags:          (document.getElementById('tags').value || '').split(',')
                      .map(t=>t.trim()).filter(t=>t),
     note:          document.getElementById('note').value.trim(),
+    status:        document.getElementById('status').value.trim(),
     lat:           myMarker.getLatLng().lat,
     lng:           myMarker.getLatLng().lng,
     createdAt:     Date.now(),
     count:         1
   };
-  await setDoc(deliveryRef(mobile), data);
-  showToast('✅ Delivery saved');
+  try{
+    await setDoc(deliveryRef(mobile), data);
+    showToast('✅ Delivery saved');
+  }catch(e){
+    alert('Error saving delivery.');
+    console.error(e);
+  }
 };
 
 window.updateDelivery = async function(){
@@ -413,6 +444,7 @@ window.updateDelivery = async function(){
     tags:          (document.getElementById('tags').value || '').split(',')
                      .map(t=>t.trim()).filter(t=>t),
     note:          document.getElementById('note').value.trim(),
+    status:        document.getElementById('status').value.trim(),
     updatedAt:     Date.now(),
     count:         (snap.data().count||0)+1
   };
@@ -421,16 +453,26 @@ window.updateDelivery = async function(){
     updates.lat = myMarker.getLatLng().lat;
     updates.lng = myMarker.getLatLng().lng;
   }
-  await updateDoc(ref, updates);
-  showToast('✅ Delivery updated');
+  try{
+    await updateDoc(ref, updates);
+    showToast('✅ Delivery updated');
+  }catch(e){
+    alert('Error updating delivery.');
+    console.error(e);
+  }
 };
 
 window.deleteDelivery = async function(){
   const mobile = document.getElementById('mobile').value.trim();
   if(!mobile){ alert('Mobile number required.'); return; }
   if(!confirm('Delete this delivery?')) return;
-  await deleteDoc(deliveryRef(mobile));
-  showToast('🗑️ Delivery deleted');
+  try{
+    await deleteDoc(deliveryRef(mobile));
+    showToast('🗑️ Delivery deleted');
+  }catch(e){
+    alert('Error deleting delivery.');
+    console.error(e);
+  }
 };
 
 /* --------------------------------------------------------------
@@ -446,6 +488,7 @@ window.detectGPS = function(){
     if(myMarker) map.removeLayer(myMarker);
     myMarker = L.marker([latitude,longitude]).addTo(map);
     map.setView([latitude,longitude],15);
+    showToast('📍 GPS location set');
   }, err=>alert('GPS error: '+err.message));
 };
 
@@ -532,9 +575,10 @@ function renderMultiCards(found,notFound,curPos){
         ${d.address}<br>
         <b>Tags:</b> ${d.tags ? d.tags.join(', ') : ''}<br>
         <b>Note:</b> ${d.note || ''}<br>
+        <b>Status:</b> ${d.status || ''}<br>
         <b>Count:</b> ${d.count||0}<br>
         <b>Distance:</b> ${dist} km<br>
-        <button onclick="route(${d.lat},${d.lng})">Route</button>
+        <button class="smallbtn" onclick="route(${d.lat},${d.lng})">Navigate →</button>
       </div>`;
   });
 
@@ -545,10 +589,21 @@ function renderMultiCards(found,notFound,curPos){
 }
 
 /* --------------------------------------------------------------
-   Routing helper
+   Routing helper – opens Google Maps directions
    -------------------------------------------------------------- */
 window.route = function(lat,lng){
-  window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
+  if(!navigator.geolocation){
+    // If we cannot get the current position, just open the destination
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const origin = `${pos.coords.latitude},${pos.coords.longitude}`;
+    const destination = `${lat},${lng}`;
+    window.open(`https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}`);
+  },()=>{ // fallback if geolocation fails
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
+  });
 };
 
 /* --------------------------------------------------------------
@@ -556,11 +611,12 @@ window.route = function(lat,lng){
    -------------------------------------------------------------- */
 window.exportCSV = async function(){
   const snap = await getDocs(collection(db,'deliveries'));
-  let csv = "Mobile,Customer Name,Address,Tags,Note,Count,Lat,Lng\n";
+  let csv = "Mobile,Customer Name,Address,Tags,Note,Status,Count,Lat,Lng\n";
   snap.forEach(docSnap=>{
     const d = docSnap.data();
     const tags = d.tags ? d.tags.join('|') : '';
-    csv += `${d.mobile},${d.customerName||''},${d.address||''},${tags},${d.note||''},${d.count||0},${d.lat||''},${d.lng||''}\n`;
+    const note = d.note ? `"${d.note.replace(/"/g,'""')}"` : '';
+    csv += `${d.mobile},${d.customerName||''},${d.address||''},${tags},${note},${d.status||''},${d.count||0},${d.lat||''},${d.lng||''}\n`;
   });
   download('deliveries.csv',csv);
 };
@@ -583,6 +639,7 @@ window.restoreData = async function(e){
         await setDoc(doc(db,'deliveries',id),docData);
       }
       alert('Restore completed.');
+      showToast('✅ Data restored');
     }catch(err){
       alert('Invalid JSON file.');
       console.error(err);
@@ -598,6 +655,7 @@ window.clearAll = async function(){
     await deleteDoc(docSnap.ref);
   }
   alert('All data cleared.');
+  showToast('🗑️ All data cleared');
 };
 
 function download(name, text){
@@ -631,9 +689,10 @@ function buildCard(d,dist){
       <b>Address:</b> ${d.address}<br>
       <b>Tags:</b> ${d.tags ? d.tags.join(', ') : ''}<br>
       <b>Note:</b> ${d.note||''}<br>
+      <b>Status:</b> ${d.status||''}<br>
       <b>Count:</b> ${d.count||0}<br>
       <b>Distance:</b> ${dist} km<br>
-      <button onclick="route(${d.lat},${d.lng})">Route</button>
+      <button class="smallbtn" onclick="route(${d.lat},${d.lng})">Navigate →</button>
     </div>`;
 }
 
