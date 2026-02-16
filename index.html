@@ -87,7 +87,7 @@ button:hover{background:#444;}
 #toast{
   position:fixed;
   bottom:20px;
-  right:-300px;               /* start hidden */
+  right:-300px;               /* start off‑screen */
   background:#4caf50;
   color:#fff;
   padding:12px 18px;
@@ -214,23 +214,23 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
 /* --------------------------------------------------------------
-   👉 YOUR FIREBASE CONFIG – paste from your console
+   👉 YOUR FIREBASE CONFIG – paste the block you copied from the console
    -------------------------------------------------------------- */
 const firebaseConfig = {
-  apiKey: "AIzaSyA82YWF574aCnkYdwN0airAcFl-_M21sHM",
-  authDomain: "delivery-map-pro.firebaseapp.com",
-  projectId: "delivery-map-pro",
-  storageBucket: "delivery-map-pro.firebasestorage.app",
-  messagingSenderId: "544868009171",
-  appId: "1:544868009171:web:e416002a340d96400b8026",
-  measurementId: "G-NQX3MRD5HP"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID",
+  measurementId: "YOUR_MEASUREMENT_ID"
 };
 
 /* --------------------------------------------------------------
    Initialise Firebase + Analytics
    -------------------------------------------------------------- */
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);      // optional analytics (no personal data)
+const analytics = getAnalytics(app);      // optional, no personal data collected
 const db = getFirestore(app);
 const auth = getAuth(app);
 window.auth = auth;   // expose for console debugging
@@ -307,9 +307,9 @@ window.changePassword = async function(){
 /* --------------------------------------------------------------
    MAP & marker handling
    -------------------------------------------------------------- */
-let map, marker;          // marker for the current delivery (add / update)
-let liveWatchId = null;   // ID from geolocation.watchPosition
-const liveMarkers = new Map(); // mobile → Leaflet marker (live tracking)
+let map, marker;          // marker for the *current* delivery (add / update)
+let liveWatchId = null;   // ID from watchPosition
+const liveMarkers = new Map();
 
 function initMap(){
   map = L.map('map').setView([23.8103,90.4125],12);
@@ -322,7 +322,7 @@ function initMap(){
     marker = L.marker(e.latlng,{draggable:true}).addTo(map);
   });
 
-  // Listen for live‑tracking updates from any delivery that has liveLat/liveLng
+  // Real‑time listener for live‑tracking markers (any delivery that has liveLat/liveLng)
   const deliveriesRef = collection(db,'deliveries');
   onSnapshot(deliveriesRef, snap=>{
     snap.docChanges().forEach(change=>{
@@ -398,7 +398,7 @@ window.toggleLiveTracking = async function(){
     btn.textContent = 'Start Live‑Tracking';
     btn.style.background = '';
 
-    // Optionally clear live data for current mobile
+    // Optionally clear live data from Firestore for this mobile
     const mobile = document.getElementById('mobile').value.trim();
     if(mobile){
       const ref = doc(db,'deliveries',mobile);
@@ -441,7 +441,7 @@ window.saveData = async function(){
     lng:    latlng.lng,
     createdAt: Date.now(),
     count: 1,
-    customerName: ''   // you can expand later
+    customerName: ''   // you can extend later
   };
   try{
     await setDoc(deliveryRef(mobile), data);
@@ -646,7 +646,7 @@ window.route = function(lat,lng){
     const origin = `${pos.coords.latitude},${pos.coords.longitude}`;
     const dest   = `${lat},${lng}`;
     window.open(`https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}`);
-  },()=>{ // fallback if geolocation denied at this moment
+  },()=>{ // fallback if geolocation still denied
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
   });
 };
