@@ -1,666 +1,1816 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Delivery Map Ultimate – Firebase Edition</title>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Delivery Map Pro - Advanced Delivery Management</title>
 
-<!-- Leaflet (map) -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
 <style>
-/* --------------------------------------------------------------
-   Global layout & dark‑mode
-   -------------------------------------------------------------- */
-body{
-  font-family:Arial,Helvetica,sans-serif;
-  margin:0;
-  background:#f4f4f4;
-  color:#222;
-  transition:background .3s,color .3s;
+:root {
+  --primary: #6366f1;
+  --primary-dark: #4f46e5;
+  --primary-light: #818cf8;
+  --secondary: #64748b;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --info: #3b82f6;
+  --dark: #1e293b;
+  --darker: #0f172a;
+  --light: #f8fafc;
+  --card-bg: #ffffff;
+  --bg-main: #e2e8f0;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.dark{
-  background:#111;
-  color:#ddd;
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  min-height: 100vh;
+  color: #334155;
+  background-attachment: fixed;
 }
-.topbar{
-  background:#000;
-  color:#fff;
-  padding:12px 15px;
-  text-align:center;
-  font-size:1.2rem;
-  position:relative;
+
+.bg-pattern {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background-image: 
+    radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(16, 185, 129, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 40% 80%, rgba(245, 158, 11, 0.08) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: -1;
 }
-.topbar .toggle{
-  position:absolute;
-  right:15px;
-  top:50%;
-  transform:translateY(-50%);
-  cursor:pointer;
-  font-size:1.4rem;
+
+.topbar {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%);
+  backdrop-filter: blur(20px);
+  color: #fff;
+  padding: 20px 30px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 30px rgba(0,0,0,0.3);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
-.container{
-  max-width:800px;
-  margin:auto;
-  padding:15px;
+
+.topbar i {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
-input,textarea,select,button{
-  width:100%;
-  max-width:420px;
-  padding:9px;
-  margin:6px 0;
-  border:1px solid #ccc;
-  border-radius:4px;
-  box-sizing:border-box;
-  font-size:1rem;
+
+.topbar .live-dot {
+  width: 8px; height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  animation: pulse-glow 2s ease-in-out infinite;
+  margin-left: auto;
 }
-button{
-  background:#222;
-  color:#fff;
-  border:none;
-  cursor:pointer;
-  transition:background .2s;
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  50% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
 }
-button:hover{background:#444;}
-.smallbtn{
-  width:auto;
-  padding:6px 12px;
-  margin:3px;
-  font-size:0.9rem;
+
+.container { max-width: 1400px; margin: auto; padding: 24px; }
+
+.card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-xl);
+  padding: 28px;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  border: 1px solid rgba(255,255,255,0.3);
+  transition: var(--transition);
 }
-.card{
-  background:#fff;
-  padding:12px;
-  margin:12px 0;
-  border-radius:6px;
-  box-shadow:0 2px 6px rgba(0,0,0,.08);
-  line-height:1.4;
-  word-break:break-word;
+
+.card:hover { box-shadow: 0 12px 40px rgba(0,0,0,0.15); }
+
+.card h3 {
+  color: #0f172a;
+  margin-bottom: 22px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid #e2e8f0;
+  font-size: 20px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
-.dark .card{background:#222;}
-.hidden{display:none;}
-#map{height:350px;margin-top:10px;}
-/* --------------------------------------------------------------
-   Toast notification (slide‑in)
-   -------------------------------------------------------------- */
-#toast{
-  position:fixed;
-  bottom:20px;
-  right:-300px;               /* start hidden */
-  background:#4caf50;
-  color:#fff;
-  padding:12px 18px;
-  border-radius:4px;
-  box-shadow:0 2px 6px rgba(0,0,0,.2);
-  opacity:0;
-  transition:right .4s, opacity .4s;
-  z-index:1000;
+
+.card h3 i { color: #6366f1; }
+
+.form-group { margin-bottom: 18px; }
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 8px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
-.dark #toast{background:#81c784;}
-.toast-show{
-  right:20px;
-  opacity:1;
+
+.form-group label i { color: #6366f1; font-size: 12px; }
+
+input, select, textarea {
+  width: 100%;
+  padding: 14px 18px;
+  margin: 6px 0;
+  border: 2px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  font-size: 15px;
+  font-family: inherit;
+  transition: var(--transition);
+  background: #f8fafc;
 }
-/* --------------------------------------------------------------
-   Bouncing live‑icon
-   -------------------------------------------------------------- */
-@keyframes bounce{
-  0%   {transform:translateY(0);}
-  30%  {transform:translateY(-12px);}
-  50%  {transform:translateY(0);}
-  70%  {transform:translateY(-6px);}
-  100% {transform:translateY(0);}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+  background: #fff;
 }
-.leaflet-marker-icon.bouncing{animation:bounce 1s infinite;}
-@media (max-width:500px){
-  input,textarea,select,button{max-width:100%;}
-  .topbar{font-size:1rem;}
+
+textarea { resize: vertical; min-height: 100px; }
+
+.btn {
+  padding: 14px 28px;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: inherit;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5);
+}
+
+.btn-secondary {
+  background: #f1f5f9;
+  color: #475569;
+  border: 2px solid #e2e8f0;
+}
+
+.btn-secondary:hover { background: #e2e8f0; border-color: #cbd5e1; }
+
+.btn-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger:hover { box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4); }
+
+.btn-success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.btn-success:hover { box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4); }
+
+.btn-warning {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #fff;
+}
+
+.btn-info {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: #fff;
+}
+
+.btn-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.btn-group .btn { flex: 1; min-width: 140px; }
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-pending { background: #fef3c7; color: #d97706; }
+.status-delivered { background: #d1fae5; color: #059669; }
+.status-returned { background: #fee2e2; color: #dc2626; }
+
+#map {
+  height: 550px;
+  border-radius: var(--radius-lg);
+  margin-top: 20px;
+  box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);
+  border: 3px solid #e2e8f0;
+}
+
+.message {
+  padding: 16px 20px;
+  border-radius: var(--radius-md);
+  margin: 12px 0;
+  font-weight: 500;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.message i { margin-top: 2px; }
+
+.success { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; }
+.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; }
+.info { background: #dbeafe; color: #1e40af; border-left: 4px solid #3b82f6; }
+.warning { background: #fef3c7; color: #92400e; border-left: 4px solid #f59e0b; }
+
+.auth-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 90vh;
+  padding: 20px;
+}
+
+.auth-card {
+  max-width: 460px;
+  width: 100%;
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-xl);
+  padding: 40px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.3);
+}
+
+.auth-card .logo { text-align: center; margin-bottom: 35px; }
+
+.auth-card .logo h2 {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 32px;
+  font-weight: 800;
+}
+
+.auth-card .logo p { color: #64748b; margin-top: 8px; font-size: 15px; }
+
+.auth-card .form-group { margin-bottom: 20px; }
+
+.location-controls {
+  display: flex;
+  gap: 15px;
+  margin: 15px 0;
+  align-items: center;
+  flex-wrap: wrap;
+  background: #f8fafc;
+  padding: 15px;
+  border-radius: var(--radius-md);
+}
+
+.location-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.location-status .dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #94a3b8;
+  position: relative;
+}
+
+.location-status .dot.active {
+  background: #10b981;
+  animation: pulse-dot 2s infinite;
+}
+
+.location-status .dot.error { background: #ef4444; }
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.7; }
+}
+
+.search-container {
+  position: relative;
+  margin-bottom: 15px;
+}
+
+.search-container input {
+  padding-left: 45px;
+  background: #f8fafc;
+}
+
+.search-container i {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+}
+
+.search-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.search-tag {
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  color: #4338ca;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  animation: fadeIn 0.3s ease;
+}
+
+.search-tag .remove {
+  cursor: pointer;
+  font-weight: bold;
+  opacity: 0.7;
+  transition: var(--transition);
+}
+
+.search-tag .remove:hover { opacity: 1; }
+
+.search-tag.not-found {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #dc2626;
+}
+
+.results-list {
+  max-height: 450px;
+  overflow-y: auto;
+  margin-top: 18px;
+  padding-right: 8px;
+}
+
+.results-list::-webkit-scrollbar { width: 6px; }
+.results-list::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
+.results-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+.result-item {
+  padding: 18px;
+  border: 2px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  margin-bottom: 12px;
+  background: #f8fafc;
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.result-item:hover {
+  background: #fff;
+  border-color: #6366f1;
+  transform: translateX(4px);
+}
+
+.result-item .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.result-item .mobile {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.result-item .name { font-weight: 600; color: #6366f1; font-size: 14px; }
+
+.result-item .address {
+  color: #475569;
+  margin: 8px 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.result-item .meta {
+  font-size: 13px;
+  color: #94a3b8;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.result-item .meta span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.distance-badge {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.distance-badge i { font-size: 11px; }
+
+.nav-btn {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: var(--transition);
+}
+
+.nav-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+}
+
+.hidden { display: none !important; }
+
+.flex { display: flex; gap: 12px; flex-wrap: wrap; }
+
+.mt-10 { margin-top: 12px; }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  padding: 20px;
+  border-radius: var(--radius-md);
+  border: 2px solid #e2e8f0;
+  text-align: center;
+  transition: var(--transition);
+}
+
+.stat-card:hover { border-color: #6366f1; transform: translateY(-2px); }
+
+.stat-card .icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+  font-size: 22px;
+}
+
+.stat-card .count {
+  font-size: 28px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.stat-card .label { color: #64748b; font-size: 13px; font-weight: 500; }
+
+.pending .icon { background: #fef3c7; color: #d97706; }
+.delivered .icon { background: #d1fae5; color: #059669; }
+.returned .icon { background: #fee2e2; color: #dc2626; }
+
+.map-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+
+.map-controls .btn {
+  padding: 10px 18px;
+  font-size: 13px;
+}
+
+.layer-control {
+  display: flex;
+  gap: 8px;
+  background: #f8fafc;
+  padding: 8px;
+  border-radius: var(--radius-md);
+}
+
+.layer-btn {
+  padding: 8px 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.layer-btn.active {
+  border-color: #6366f1;
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.header-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.filter-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  padding: 8px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 20px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.filter-btn.active {
+  background: #6366f1;
+  color: #fff;
+  border-color: #6366f1;
+}
+
+.toast-container {
+  position: fixed;
+  top: 90px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.toast {
+  padding: 16px 20px;
+  border-radius: var(--radius-md);
+  background: #fff;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: slideIn 0.3s ease;
+  min-width: 300px;
+  font-weight: 500;
+}
+
+.toast.success { border-left: 4px solid #10b981; }
+.toast.error { border-left: 4px solid #ef4444; }
+.toast.info { border-left: 4px solid #3b82f6; }
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .container { padding: 15px; }
+  .card { padding: 20px; }
+  #map { height: 400px; }
+  .btn-group .btn { min-width: 100%; }
+  .auth-card { padding: 25px; }
+  .header-stats { flex-direction: column; align-items: stretch; }
+}
+
+.dark-mode-toggle {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+  z-index: 999;
+  transition: var(--transition);
+}
+
+.dark-mode-toggle:hover { transform: scale(1.1); }
+
+.fullscreen-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  z-index: 1000;
+  background: #fff;
+  border: 2px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.fullscreen-btn:hover { background: #f8fafc; }
+
+.leaflet-container.fullscreen {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 9999;
 }
 </style>
 </head>
-
 <body>
 
+<div class="bg-pattern"></div>
+
 <div class="topbar">
-  Delivery Map Ultimate – Firebase Edition
-  <span class="toggle" onclick="toggleDark()">🌙</span>
+  <i class="fas fa-truck-fast"></i>
+  Delivery Map Pro
+  <span style="font-size:14px;font-weight:400;opacity:0.8;margin-left:10px;">Advanced Delivery Management</span>
+  <div class="live-dot"></div>
 </div>
+
+<div class="toast-container" id="toastContainer"></div>
 
 <div class="container">
 
-  <!-- ===================== LOGIN ===================== -->
-  <div id="loginBox">
-    <h3>Login</h3>
-    <input type="text" id="username" placeholder="Email (e.g. admin@gmail.com)">
-    <input type="password" id="password" placeholder="Password">
-    <button onclick="login()">Login</button>
-  </div>
-
-  <!-- ===================== MAIN PANEL ===================== -->
-  <div id="panel" class="hidden">
-
-    <button onclick="logout()" class="smallbtn">Logout</button>
-    <button onclick="changePassword()" class="smallbtn">Change Password</button>
-    <button onclick="toggleLiveTracking()" class="smallbtn" id="trackBtn">Start Live‑Tracking</button>
-
-    <!-- ==== Add / Update Delivery ==== -->
-    <h3>Add / Update Delivery</h3>
-
-    <input type="text" id="mobile" placeholder="Mobile Number (unique ID)">
-    <input type="text" id="address" placeholder="Full Address">
-    <select id="status">
-      <option>Pending</option>
-      <option>Delivered</option>
-      <option>Returned</option>
-    </select>
-    <input type="text" id="note" placeholder="Note (optional)">
-
-    <button onclick="saveData()">Save New</button>
-    <button onclick="updateData()">Update Status</button>
-    <button onclick="deleteData()">Delete</button>
-    <button onclick="detectGPS()">Auto Detect GPS</button>
-
-    <hr>
-
-    <!-- ==== Search by Mobile ==== -->
-    <h3>Search by Mobile</h3>
-    <input type="text" id="searchMobile" placeholder="Enter Mobile">
-    <button onclick="searchData()">Search</button>
-
-    <div id="result"></div>
-
-    <hr>
-
-    <!-- ==== Data Tools ==== -->
-    <h3>Data Tools</h3>
-    <button onclick="exportCSV()" class="smallbtn">Export CSV</button>
-    <button onclick="backupData()" class="smallbtn">Backup JSON</button>
-    <input type="file" onchange="restoreData(event)" class="smallbtn">
-    <button onclick="clearAll()" class="smallbtn">Clear All Data</button>
-
+<!-- Login Panel -->
+<div id="authCard" class="auth-wrapper">
+  <div class="auth-card">
+    <div class="logo">
+      <h2><i class="fas fa-truck-fast"></i> Delivery Map Pro</h2>
+      <p>Advanced Delivery Management System</p>
+    </div>
+    <div class="form-group">
+      <label><i class="fas fa-envelope"></i> Email Address</label>
+      <input type="email" id="loginEmail" placeholder="Enter your email">
+    </div>
+    <div class="form-group">
+      <label><i class="fas fa-lock"></i> Password</label>
+      <input type="password" id="loginPassword" placeholder="Enter your password">
+    </div>
+    <div class="btn-group" style="flex-direction:column;">
+      <button id="loginBtn" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button>
+      <button id="registerBtn" class="btn btn-secondary"><i class="fas fa-user-plus"></i> Create Account</button>
+    </div>
+    <div id="authMsg"></div>
   </div>
 </div>
 
-<!-- ===================== MAP ===================== -->
-<div id="map" class="hidden"></div>
+<!-- Main App -->
+<div id="app" class="hidden">
 
-<!-- Toast for feedback -->
-<div id="toast"></div>
+<!-- Header with Stats -->
+<div class="card">
+  <div class="header-stats">
+    <div>
+      <h3 style="margin:0;border:none;padding:0;display:flex;align-items:center;gap:10px;">
+        <i class="fas fa-user-circle" style="color:#6366f1;"></i>
+        Welcome, <span id="userEmail" style="color:#6366f1;"></span>
+      </h3>
+      <p style="color:#64748b;margin-top:5px;font-size:14px;"><i class="fas fa-clock"></i> <span id="currentTime"></span></p>
+    </div>
+    <button id="logoutBtn" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</button>
+  </div>
+  
+  <div class="location-controls">
+    <div class="location-status">
+      <span class="dot" id="locationDot"></span>
+      <span id="locationStatusText">Getting location...</span>
+    </div>
+    <button id="refreshLocationBtn" class="btn btn-secondary" style="padding:10px 16px;font-size:13px;">
+      <i class="fas fa-location-dot"></i> Refresh
+    </button>
+    <div id="currentDistance" style="margin-left:auto;font-weight:600;color:#6366f1;font-size:14px;">
+      <i class="fas fa-route"></i> Distance: <span id="distValue">--</span>
+    </div>
+  </div>
+</div>
+
+<!-- Stats Overview -->
+<div class="stats-grid">
+  <div class="stat-card pending">
+    <div class="icon"><i class="fas fa-clock"></i></div>
+    <div class="count" id="pendingCount">0</div>
+    <div class="label">Pending</div>
+  </div>
+  <div class="stat-card delivered">
+    <div class="icon"><i class="fas fa-check-circle"></i></div>
+    <div class="count" id="deliveredCount">0</div>
+    <div class="label">Delivered</div>
+  </div>
+  <div class="stat-card returned">
+    <div class="icon"><i class="fas fa-undo"></i></div>
+    <div class="count" id="returnedCount">0</div>
+    <div class="label">Returned</div>
+  </div>
+</div>
+
+<!-- Add/Update Delivery -->
+<div class="card">
+  <h3><i class="fas fa-plus-circle"></i> Add / Update Delivery</h3>
+  
+  <div class="flex" style="gap:15px;">
+    <div style="flex:1;min-width:200px;">
+      <div class="form-group">
+        <label><i class="fas fa-mobile-alt"></i> Mobile Number *</label>
+        <input type="tel" id="mobileInput" placeholder="01XXXXXXXXX">
+      </div>
+    </div>
+    <div style="flex:1;min-width:200px;">
+      <div class="form-group">
+        <label><i class="fas fa-user"></i> Customer Name</label>
+        <input type="text" id="nameInput" placeholder="Customer name">
+      </div>
+    </div>
+    <div style="flex:1;min-width:200px;">
+      <div class="form-group">
+        <label><i class="fas fa-flag"></i> Delivery Status</label>
+        <select id="statusSelect">
+          <option value="Pending">⏳ Pending</option>
+          <option value="Delivered">✅ Delivered</option>
+          <option value="Returned">↩️ Returned</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  
+  <div class="form-group">
+    <label><i class="fas fa-map-marker-alt"></i> Full Address *</label>
+    <input type="text" id="addressInput" placeholder="Enter complete delivery address">
+  </div>
+  
+  <div class="form-group">
+    <label><i class="fas fa-location-dot"></i> Pickup Location (Click map or use button)</label>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <input type="text" id="pickupLat" placeholder="Latitude" style="flex:1;min-width:120px;" readonly>
+      <input type="text" id="pickupLng" placeholder="Longitude" style="flex:1;min-width:120px;" readonly>
+      <button id="getPickupLocationBtn" class="btn btn-secondary"><i class="fas fa-crosshairs"></i> Get Current</button>
+    </div>
+    <small style="color:#64748b;">💡 Tip: Click on the map to select pickup location or search address</small>
+  </div>
+  
+  <div class="form-group">
+    <label><i class="fas fa-sticky-note"></i> Delivery Notes</label>
+    <textarea id="noteInput" placeholder="Any special instructions..."></textarea>
+  </div>
+  
+  <div class="btn-group">
+    <button id="saveBtn" class="btn btn-success"><i class="fas fa-save"></i> Save / Update</button>
+    <button id="clearFormBtn" class="btn btn-secondary"><i class="fas fa-eraser"></i> Clear Form</button>
+    <button id="deleteBtn" class="btn btn-danger"><i class="fas fa-trash"></i> Delete</button>
+  </div>
+  <div id="saveMsg"></div>
+</div>
+
+<!-- Single Search -->
+<div class="card">
+  <h3><i class="fas fa-search"></i> Single Search</h3>
+  <div class="search-container">
+    <i class="fas fa-mobile-alt"></i>
+    <input type="text" id="singleSearchInput" placeholder="Search by mobile, name, or address...">
+  </div>
+  <div class="btn-group">
+    <button id="singleSearchBtn" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+    <button id="clearSingleSearchBtn" class="btn btn-secondary"><i class="fas fa-times"></i> Clear</button>
+  </div>
+  <div id="singleSearchResult"></div>
+</div>
+
+<!-- Multiple Search -->
+<div class="card">
+  <h3><i class="fas fa-list-ul"></i> Multiple Search</h3>
+  <div class="form-group">
+    <label><i class="fas fa-mobile-alt"></i> Enter multiple mobile numbers (comma or space separated)</label>
+    <input type="text" id="multiSearchInput" placeholder="e.g., 01712345678, 01812345679, 01912345670">
+  </div>
+  <div class="btn-group">
+    <button id="multiSearchBtn" class="btn btn-primary"><i class="fas fa-search-plus"></i> Search All</button>
+    <button id="clearSearchBtn" class="btn btn-secondary"><i class="fas fa-trash-alt"></i> Clear List</button>
+  </div>
+  
+  <div id="searchTags" class="search-tags hidden"></div>
+  <div id="multiSearchResults" class="results-list"></div>
+</div>
+
+<!-- Map -->
+<div class="card" style="position:relative;">
+  <h3><i class="fas fa-map"></i> Live Map</h3>
+  
+  <div class="map-controls">
+    <button id="zoomToCurrentBtn" class="btn btn-secondary"><i class="fas fa-location-arrow"></i> My Location</button>
+    <button id="showAllDeliveriesBtn" class="btn btn-secondary"><i class="fas fa-boxes-stacked"></i> Show All</button>
+    <button id="toggleFullscreenBtn" class="btn btn-secondary"><i class="fas fa-expand"></i> Fullscreen</button>
+    
+    <div class="layer-control">
+      <button class="layer-btn active" data-layer="street"><i class="fas fa-road"></i> Street</button>
+      <button class="layer-btn" data-layer="satellite"><i class="fas fa-satellite"></i> Satellite</button>
+      <button class="layer-btn" data-layer="terrain"><i class="fas fa-mountain"></i> Terrain</button>
+    </div>
+  </div>
+  
+  <div class="filter-group" style="margin-bottom:15px;">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="Pending">Pending</button>
+    <button class="filter-btn" data-filter="Delivered">Delivered</button>
+    <button class="filter-btn" data-filter="Returned">Returned</button>
+  </div>
+  
+  <div id="map"></div>
+  <div id="mapLegend" style="position:absolute;bottom:30px;left:10px;background:white;padding:10px 15px;border-radius:8px;font-size:12px;box-shadow:0 2px 10px rgba(0,0,0,0.2);z-index:1000;">
+    <div style="display:flex;align-items:center;gap:8px;margin:5px 0;"><span style="width:12px;height:12px;background:#6366f1;border-radius:50%;"></span> My Location</div>
+    <div style="display:flex;align-items:center;gap:8px;margin:5px 0;"><span style="width:12px;height:12px;background:#f59e0b;border-radius:50%;"></span> Pending</div>
+    <div style="display:flex;align-items:center;gap:8px;margin:5px 0;"><span style="width:12px;height:12px;background:#10b981;border-radius:50%;"></span> Delivered</div>
+    <div style="display:flex;align-items:center;gap:8px;margin:5px 0;"><span style="width:12px;height:12px;background:#ef4444;border-radius:50%;"></span> Returned</div>
+  </div>
+</div>
+
+</div>
+
+</div>
 
 <script type="module">
-/* --------------------------------------------------------------
-   Firebase SDK imports
-   -------------------------------------------------------------- */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-analytics.js";
-import {
-  getFirestore,
-  collection,
-  doc,
-  setDoc,
-  getDoc,
-  getDocs,
-  deleteDoc,
-  updateDoc,
-  onSnapshot,
-  deleteField
-} from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  signOut,
-  updatePassword
-} from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } 
+from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, getDocs, collection, query, where, deleteDoc } 
+from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-/* --------------------------------------------------------------
-   👉 YOUR FIREBASE CONFIG – paste from your console
-   -------------------------------------------------------------- */
 const firebaseConfig = {
   apiKey: "AIzaSyA82YWF574aCnkYdwN0airAcFl-_M21sHM",
   authDomain: "delivery-map-pro.firebaseapp.com",
   projectId: "delivery-map-pro",
   storageBucket: "delivery-map-pro.firebasestorage.app",
   messagingSenderId: "544868009171",
-  appId: "1:544868009171:web:e416002a340d96400b8026",
-  measurementId: "G-NQX3MRD5HP"
+  appId: "1:544868009171:web:005b3e95248eac940b8026"
 };
 
-/* --------------------------------------------------------------
-   Initialise Firebase + Analytics
-   -------------------------------------------------------------- */
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);      // optional analytics (no personal data)
-const db = getFirestore(app);
 const auth = getAuth(app);
-window.auth = auth;   // expose for console debugging
+const db = getFirestore(app);
 
-/* --------------------------------------------------------------
-   UI helpers
-   -------------------------------------------------------------- */
-function toggleDark(){ document.body.classList.toggle('dark'); }
+// DOM Elements
+const authCard = document.getElementById("authCard");
+const appDiv = document.getElementById("app");
+const loginEmail = document.getElementById("loginEmail");
+const loginPassword = document.getElementById("loginPassword");
+const authMsg = document.getElementById("authMsg");
+const userEmail = document.getElementById("userEmail");
+const locationDot = document.getElementById("locationDot");
+const locationStatusText = document.getElementById("locationStatusText");
+const distValue = document.getElementById("distValue");
 
-function showToast(msg){
-  const toast = document.getElementById('toast');
-  toast.textContent = msg;
-  toast.classList.add('toast-show');
-  setTimeout(()=>{ toast.classList.remove('toast-show'); },3000);
+const mobileInput = document.getElementById("mobileInput");
+const nameInput = document.getElementById("nameInput");
+const addressInput = document.getElementById("addressInput");
+const statusSelect = document.getElementById("statusSelect");
+const noteInput = document.getElementById("noteInput");
+const pickupLat = document.getElementById("pickupLat");
+const pickupLng = document.getElementById("pickupLng");
+const saveMsg = document.getElementById("saveMsg");
+
+let map;
+let userMarker = null;
+let pickupMarker = null;
+let deliveryMarkers = [];
+let watchId = null;
+let currentPosition = null;
+let streetLayer, satelliteLayer, terrainLayer;
+let currentLayer = 'street';
+let allDeliveries = [];
+let activeFilter = 'all';
+
+// ==================== UTILITIES ====================
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i> ${message}`;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
 }
 
-/* --------------------------------------------------------------
-   Geolocation permission helper (nice UX)
-   -------------------------------------------------------------- */
-async function ensureGeolocationPermission(){
-  if (!navigator.geolocation){
-    alert('Geolocation not supported on this device.');
-    return false;
+function formatDistance(meters) {
+  if (!meters) return '--';
+  if (meters < 1000) {
+    return meters.toFixed(0) + ' m';
+  } else {
+    return (meters / 1000).toFixed(2) + ' km';
   }
-  if (navigator.permissions){
-    try{
-      const r = await navigator.permissions.query({name:'geolocation'});
-      if (r.state === 'denied'){
-        alert('Geolocation is blocked for this site. Please enable it in browser settings and reload.');
-        return false;
-      }
-    }catch(e){ /* ignore – fallback to normal request */ }
-  }
-  return true;
 }
 
-/* --------------------------------------------------------------
-   AUTH – login / logout / change password
-   -------------------------------------------------------------- */
-window.login = async function(){
-  const email = document.getElementById('username').value.trim();
-  const pwd   = document.getElementById('password').value;
-  try{
-    await signInWithEmailAndPassword(auth,email,pwd);
-    document.getElementById('loginBox').classList.add('hidden');
-    document.getElementById('panel').classList.remove('hidden');
-    document.getElementById('map').classList.remove('hidden');
-    initMap();
-    showToast('✅ Logged in');
-  }catch(e){
-    alert('Login failed – check email/password.');
-    console.error(e);
-  }
-};
+// Haversine formula for accurate distance calculation
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371000; // Earth's radius in meters
+  const φ1 = lat1 * Math.PI / 180;
+  const φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lon2 - lon1) * Math.PI / 180;
 
-window.logout = async function(){
-  await signOut(auth);
-  location.reload();
-};
+  const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ/2) * Math.sin(Δλ/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 
-window.changePassword = async function(){
-  const newPass = prompt('Enter new password:');
-  if(!newPass) return;
-  try{
-    await updatePassword(auth.currentUser,newPass);
-    alert('Password changed!');
-    showToast('✅ Password updated');
-  }catch(e){
-    alert('Could not change password – please re‑login then try again.');
-    console.error(e);
-  }
-};
+  return R * c;
+}
 
-/* --------------------------------------------------------------
-   MAP & marker handling
-   -------------------------------------------------------------- */
-let map, marker;          // marker for the current delivery (add / update)
-let liveWatchId = null;   // ID from geolocation.watchPosition
-const liveMarkers = new Map(); // mobile → Leaflet marker (live tracking)
+function updateCurrentTime() {
+  const now = new Date();
+  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+  document.getElementById('currentTime').textContent = now.toLocaleDateString('en-US', options);
+}
+setInterval(updateCurrentTime, 1000);
+updateCurrentTime();
 
-function initMap(){
-  map = L.map('map').setView([23.8103,90.4125],12);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
-    .addTo(map);
-
-  // Click → static location for Save / Update
-  map.on('click', e=>{
-    if(marker) map.removeLayer(marker);
-    marker = L.marker(e.latlng,{draggable:true}).addTo(map);
+// ==================== MAP ====================
+function initMap() {
+  if (map) map.remove();
+  
+  map = L.map('map', {
+    zoomControl: true,
+    attributionControl: true
+  }).setView([23.8103, 90.4125], 12);
+  
+  // Street Layer
+  streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap',
+    maxZoom: 19
   });
-
-  // Listen for live‑tracking updates from any delivery that has liveLat/liveLng
-  const deliveriesRef = collection(db,'deliveries');
-  onSnapshot(deliveriesRef, snap=>{
-    snap.docChanges().forEach(change=>{
-      const data = change.doc.data();
-      const mobile = data.mobile;
-      if(change.type==="removed" || !data.liveLat || !data.liveLng){
-        const old = liveMarkers.get(mobile);
-        if(old){ map.removeLayer(old); liveMarkers.delete(mobile); }
-        return;
-      }
-      const latLng = [data.liveLat, data.liveLng];
-      if(liveMarkers.has(mobile)){
-        liveMarkers.get(mobile).setLatLng(latLng);
-      }else{
-        const lm = L.marker(latLng,{icon:liveIcon()})
-          .bindPopup(`<b>${data.customerName||''}</b><br>${mobile}`)
-          .addTo(map);
-        lm.getElement().classList.add('bouncing');
-        liveMarkers.set(mobile,lm);
-      }
+  
+  // Satellite Layer (ESRI)
+  satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: '© Esri',
+    maxZoom: 19
+  });
+  
+  // Terrain Layer
+  terrainLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenTopoMap',
+    maxZoom: 17
+  });
+  
+  streetLayer.addTo(map);
+  
+  // Geocoder for address search
+  const geocoder = L.Control.geocoder({
+    defaultMarkGeocode: false,
+    placeholder: 'Search address...'
+  }).on('markgeocode', function(e) {
+    const center = e.geocode.center;
+    pickupLat.value = center.lat.toFixed(6);
+    pickupLng.value = center.lng.toFixed(6);
+    setPickupMarker(center.lat, center.lng);
+    map.setView([center.lat, center.lng], 16);
+    showToast('Address found!', 'success');
+  }).addTo(map);
+  
+  // Click on map to set pickup location
+  map.on('click', function(e) {
+    pickupLat.value = e.latlng.lat.toFixed(6);
+    pickupLng.value = e.latlng.lng.toFixed(6);
+    setPickupMarker(e.latlng.lat, e.latlng.lng);
+    showToast('📍 Pickup location set!', 'info');
+  });
+  
+  // Layer control buttons
+  document.querySelectorAll('.layer-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const layer = btn.dataset.layer;
+      switchLayer(layer);
     });
   });
-}
-
-/* Icon for live‑tracking */
-function liveIcon(){
-  return L.icon({
-    iconUrl:"https://cdn-icons-png.flaticon.com/512/684/684908.png",
-    iconSize:[30,30],
-    iconAnchor:[15,30]
+  
+  // Filter buttons
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeFilter = btn.dataset.filter;
+      filterMarkers();
+    });
   });
-}
-
-/* --------------------------------------------------------------
-   Live‑Tracking (pushes your position to Firestore)
-   -------------------------------------------------------------- */
-window.toggleLiveTracking = async function(){
-  const btn = document.getElementById('trackBtn');
-
-  if(liveWatchId===null){
-    const ok = await ensureGeolocationPermission();
-    if(!ok) return;
-
-    liveWatchId = navigator.geolocation.watchPosition(async pos=>{
-      const {latitude,longitude} = pos.coords;
-      // Show your own moving marker
-      if(marker) map.removeLayer(marker);
-      marker = L.marker([latitude,longitude],{icon:liveIcon()})
-        .bindPopup('You (Live)')
-        .addTo(map);
-      map.setView([latitude,longitude],15);
-
-      // Write live coordinates under the mobile you typed
-      const mobile = document.getElementById('mobile').value.trim();
-      if(mobile){
-        const ref = doc(db,'deliveries',mobile);
-        await setDoc(ref,{
-          mobile,
-          liveLat: latitude,
-          liveLng: longitude,
-          liveTimestamp: Date.now()
-        },{merge:true});
-      }
-    }, err=>alert('Live‑tracking error: '+err.message),
-    {enableHighAccuracy:true});
-
-    btn.textContent = 'Stop Live‑Tracking';
-    btn.style.background = '#c62828';
-    showToast('📍 Live‑tracking started');
-  }else{
-    navigator.geolocation.clearWatch(liveWatchId);
-    liveWatchId = null;
-    btn.textContent = 'Start Live‑Tracking';
-    btn.style.background = '';
-
-    // Optionally clear live data for current mobile
-    const mobile = document.getElementById('mobile').value.trim();
-    if(mobile){
-      const ref = doc(db,'deliveries',mobile);
-      await updateDoc(ref,{liveLat:deleteField(),liveLng:deleteField(),liveTimestamp:deleteField()});
+  
+  // Fullscreen button
+  document.getElementById('toggleFullscreenBtn').addEventListener('click', () => {
+    const mapContainer = document.getElementById('map').parentElement;
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      mapContainer.requestFullscreen();
     }
-    showToast('🛑 Live‑tracking stopped');
-  }
-};
-
-/* --------------------------------------------------------------
-   CRUD – Delivery (add / update / delete)
-   -------------------------------------------------------------- */
-function deliveryRef(mobile){ return doc(db,'deliveries',mobile); }
-
-window.saveData = async function(){
-  if(!marker){
-    alert('Click on the map to set a location first.');
-    return;
-  }
-  const mobile  = document.getElementById('mobile').value.trim();
-  const address = document.getElementById('address').value.trim();
-  if(!mobile || !address){
-    alert('Mobile & address are required.');
-    return;
-  }
-
-  const snap = await getDoc(deliveryRef(mobile));
-  if(snap.exists()){
-    alert('Number already exists – use Update instead.');
-    return;
-  }
-
-  const latlng = marker.getLatLng();
-  const data = {
-    mobile,
-    address,
-    status: document.getElementById('status').value,
-    note:   document.getElementById('note').value.trim(),
-    lat:    latlng.lat,
-    lng:    latlng.lng,
-    createdAt: Date.now(),
-    count: 1,
-    customerName: ''   // you can expand later
-  };
-  try{
-    await setDoc(deliveryRef(mobile), data);
-    showToast('✅ Delivery saved');
-  }catch(e){
-    alert('Error saving delivery.');
-    console.error(e);
-  }
-};
-
-window.updateData = async function(){
-  const mobile = document.getElementById('mobile').value.trim();
-  if(!mobile){ alert('Mobile required.'); return; }
-
-  const ref = deliveryRef(mobile);
-  const snap = await getDoc(ref);
-  if(!snap.exists()){
-    alert('Delivery not found.');
-    return;
-  }
-
-  const updates = {
-    status: document.getElementById('status').value,
-    note:   document.getElementById('note').value.trim(),
-    updatedAt: Date.now(),
-    count: (snap.data().count||0)+1
-  };
-  if(marker){
-    const ll = marker.getLatLng();
-    updates.lat = ll.lat;
-    updates.lng = ll.lng;
-  }
-  try{
-    await updateDoc(ref, updates);
-    showToast('✅ Delivery updated');
-  }catch(e){
-    alert('Error updating delivery.');
-    console.error(e);
-  }
-};
-
-window.deleteData = async function(){
-  const mobile = document.getElementById('mobile').value.trim();
-  if(!mobile){ alert('Mobile required.'); return; }
-  if(!confirm('Delete this delivery?')) return;
-  try{
-    await deleteDoc(deliveryRef(mobile));
-    showToast('🗑️ Delivery deleted');
-  }catch(e){
-    alert('Error deleting delivery.');
-    console.error(e);
-  }
-};
-
-/* --------------------------------------------------------------
-   Auto‑detect GPS (one‑time)
-   -------------------------------------------------------------- */
-window.detectGPS = async function(){
-  const ok = await ensureGeolocationPermission();
-  if(!ok) return;
-
-  navigator.geolocation.getCurrentPosition(pos=>{
-    const {latitude,longitude} = pos.coords;
-    if(marker) map.removeLayer(marker);
-    marker = L.marker([latitude,longitude]).addTo(map);
-    map.setView([latitude,longitude],15);
-    showToast('📍 GPS location set');
-  }, err=>alert('GPS error: '+err.message));
-};
-
-/* --------------------------------------------------------------
-   Search by mobile (single)
-   -------------------------------------------------------------- */
-window.searchData = async function(){
-  const mobile = document.getElementById('searchMobile').value.trim();
-  if(!mobile){ alert('Enter a mobile number.'); return; }
-  const snap = await getDoc(deliveryRef(mobile));
-  if(!snap.exists()){
-    document.getElementById('result').innerHTML = '<p>No data found.</p>';
-    return;
-  }
-  const info = snap.data();
-
-  // Fill the form so the user can edit if needed
-  document.getElementById('mobile').value = mobile;
-  document.getElementById('address').value = info.address;
-  document.getElementById('status').value = info.status;
-  document.getElementById('note').value   = info.note || '';
-
-  // Show on map
-  map.setView([info.lat,info.lng],15);
-  if(marker) map.removeLayer(marker);
-  marker = L.marker([info.lat,info.lng]).addTo(map);
-
-  // Distance from user (if geolocation allowed)
-  const resultDiv = document.getElementById('result');
-  if(!navigator.geolocation){
-    resultDiv.innerHTML = buildCard(info,'N/A');
-    return;
-  }
-  navigator.geolocation.getCurrentPosition(pos=>{
-    const dist = distance(pos.coords.latitude,pos.coords.longitude,info.lat,info.lng).toFixed(2);
-    resultDiv.innerHTML = buildCard(info,dist);
-  },()=>{ resultDiv.innerHTML = buildCard(info,'N/A'); });
-};
-
-/* --------------------------------------------------------------
-   Data export / backup / restore / clear‑all
-   -------------------------------------------------------------- */
-window.exportCSV = async function(){
-  const snap = await getDocs(collection(db,'deliveries'));
-  let csv = "Mobile,Address,Status,Note,Count,Lat,Lng\n";
-  snap.forEach(docSnap=>{
-    const d = docSnap.data();
-    const note = d.note ? `"${d.note.replace(/"/g,'""')}"` : '';
-    csv += `${docSnap.id},${d.address},${d.status},${note},${d.count||0},${d.lat||''},${d.lng||''}\n`;
   });
-  download('deliveries.csv',csv);
-};
+  
+  requestLocation();
+}
 
-window.backupData = async function(){
-  const snap = await getDocs(collection(db,'deliveries'));
-  const obj = {};
-  snap.forEach(docSnap=>{ obj[docSnap.id]=docSnap.data(); });
-  download('deliveries_backup.json',JSON.stringify(obj, null, 2));
-};
+function switchLayer(layer) {
+  if (currentLayer === layer) return;
+  
+  map.removeLayer(streetLayer);
+  map.removeLayer(satelliteLayer);
+  map.removeLayer(terrainLayer);
+  
+  switch(layer) {
+    case 'street':
+      streetLayer.addTo(map);
+      break;
+    case 'satellite':
+      satelliteLayer.addTo(map);
+      break;
+    case 'terrain':
+      terrainLayer.addTo(map);
+      break;
+  }
+  currentLayer = layer;
+}
 
-window.restoreData = async function(e){
-  const file = e.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = async ev=>{
-    try{
-      const data = JSON.parse(ev.target.result);
-      for(const [id,docData] of Object.entries(data)){
-        await setDoc(doc(db,'deliveries',id),docData);
+function setPickupMarker(lat, lng) {
+  if (pickupMarker) map.removeLayer(pickupMarker);
+  
+  pickupMarker = L.marker([lat, lng], {
+    draggable: true,
+    icon: L.divIcon({
+      html: '<div style="background:#10b981;width:30px;height:30px;border-radius:50%;border:4px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;">📍</div>',
+      iconSize: [30, 30],
+      iconAnchor: [15, 15]
+    })
+  }).addTo(map).bindPopup("<b>📍 Pickup Location</b>").openPopup();
+  
+  pickupMarker.on('dragend', function(e) {
+    const pos = e.target.getLatLng();
+    pickupLat.value = pos.lat.toFixed(6);
+    pickupLng.value = pos.lng.toFixed(6);
+  });
+}
+
+// ==================== LOCATION ====================
+function requestLocation() {
+  if (!navigator.geolocation) {
+    updateLocationStatus(false, "Geolocation not supported");
+    return;
+  }
+  
+  updateLocationStatus(false, "Getting location...");
+  
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      currentPosition = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+        accuracy: position.coords.accuracy
+      };
+      updateUserMarker(currentPosition);
+      updateLocationStatus(true, `Location active (Accuracy: ±${Math.round(position.coords.accuracy)}m)`);
+      startWatchLocation();
+      loadAllDeliveries();
+    },
+    (error) => {
+      let msg = "Location error";
+      if (error.code === 1) msg = "Permission denied - Please allow location";
+      else if (error.code === 2) msg = "Position unavailable";
+      else if (error.code === 3) msg = "Timeout";
+      updateLocationStatus(false, msg);
+      showToast(msg, 'error');
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+  );
+}
+
+function startWatchLocation() {
+  if (watchId) navigator.geolocation.clearWatch(watchId);
+  
+  watchId = navigator.geolocation.watchPosition(
+    (position) => {
+      currentPosition = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+        accuracy: position.coords.accuracy
+      };
+      updateUserMarker(currentPosition);
+      updateLocationStatus(true, `Live tracking (Accuracy: ±${Math.round(position.coords.accuracy)}m)`);
+      
+      // Update distance if we have selected delivery
+      if (selectedDeliveryForDistance) {
+        const dist = calculateDistance(
+          currentPosition.lat, currentPosition.lng,
+          selectedDeliveryForDistance.lat, selectedDeliveryForDistance.lng
+        );
+        distValue.textContent = formatDistance(dist);
       }
-      alert('Restore completed.');
-      showToast('✅ Data restored');
-    }catch(err){
-      alert('Invalid JSON file.');
-      console.error(err);
-    }
-  };
-  reader.readAsText(file);
-};
+    },
+    (error) => { console.log("Watch error:", error.message); },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+  );
+}
 
-window.clearAll = async function(){
-  if(!confirm('Delete ALL delivery data? This cannot be undone.')) return;
-  const snap = await getDocs(collection(db,'deliveries'));
-  for(const docSnap of snap){
-    await deleteDoc(docSnap.ref);
+function updateUserMarker(pos) {
+  if (!map) return;
+  
+  const pulseIcon = L.divIcon({
+    html: `
+      <div style="position:relative;">
+        <div style="width:24px;height:24px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:50%;border:4px solid #fff;box-shadow:0 3px 10px rgba(99,102,241,0.5);"></div>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:24px;height:24px;background:rgba(99,102,241,0.3);border-radius:50%;animation:pulse-ring 2s infinite;"></div>
+      </div>
+      <style>@keyframes pulse-ring{0%{transform:translate(-50%,-50%) scale(1);opacity:0.5}100%{transform:translate(-50%,-50%) scale(2.5);opacity:0}}</style>
+    `,
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+    className: 'user-marker'
+  });
+  
+  if (userMarker) {
+    userMarker.setLatLng([pos.lat, pos.lng]);
+  } else {
+    userMarker = L.marker([pos.lat, pos.lng], { icon: pulseIcon })
+      .addTo(map)
+      .bindPopup("<b>📍 My Location</b><br>Your current position").openPopup();
   }
-  alert('All data cleared.');
-  showToast('🗑️ All data cleared');
-};
-
-function download(name, text){
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([text],{type:'text/plain'}));
-  a.download = name;
-  a.click();
+  
+  if (!map.getCenter().equals([pos.lat, pos.lng])) {
+    // Don't auto-pan if user is interacting with map
+  }
 }
 
-/* --------------------------------------------------------------
-   Haversine distance (km)
-   -------------------------------------------------------------- */
-function distance(lat1,lon1,lat2,lon2){
-  const R = 6371;
-  const dLat = (lat2-lat1)*Math.PI/180;
-  const dLon = (lon2-lon1)*Math.PI/180;
-  const a = Math.sin(dLat/2)**2 +
-            Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
-            Math.sin(dLon/2)**2;
-  return R * (2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+function updateLocationStatus(active, text) {
+  locationDot.className = 'dot ' + (active ? 'active' : 'error');
+  locationStatusText.textContent = text;
 }
 
-/* --------------------------------------------------------------
-   Card builder (used in search results)
-   -------------------------------------------------------------- */
-function buildCard(d,dist){
-  return `
-    <div class="card">
-      <b>Address:</b> ${d.address}<br>
-      <b>Status:</b> ${d.status}<br>
-      <b>Note:</b> ${d.note || ''}<br>
-      <b>Count:</b> ${d.count||0}<br>
-      <b>Distance:</b> ${dist} km<br>
-      <button class="smallbtn" onclick="route(${d.lat},${d.lng})">Navigate →</button>
-    </div>`;
-}
+// ==================== AUTH ====================
+let isFirstLoad = true;
 
-/* --------------------------------------------------------------
-   Routing – open Google Maps with origin → destination
-   -------------------------------------------------------------- */
-window.route = function(lat,lng){
-  if(!navigator.geolocation){
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
+onAuthStateChanged(auth, (user) => {
+  if (isFirstLoad) {
+    isFirstLoad = false;
     return;
   }
-  navigator.geolocation.getCurrentPosition(pos=>{
-    const origin = `${pos.coords.latitude},${pos.coords.longitude}`;
-    const dest   = `${lat},${lng}`;
-    window.open(`https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}`);
-  },()=>{ // fallback if geolocation denied at this moment
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
-  });
+  
+  if (user) {
+    authCard.classList.add("hidden");
+    appDiv.classList.remove("hidden");
+    userEmail.textContent = user.email;
+    setTimeout(initMap, 300);
+  } else {
+    authCard.classList.remove("hidden");
+    appDiv.classList.add("hidden");
+    userEmail.textContent = "";
+  }
+});
+
+document.getElementById("loginBtn").onclick = async () => {
+  const email = loginEmail.value.trim();
+  const password = loginPassword.value;
+  
+  if (!email || !password) {
+    authMsg.innerHTML = '<div class="message error">Please enter email and password</div>';
+    return;
+  }
+  
+  authMsg.innerHTML = '<div class="message info">Logging in...</div>';
+  
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    authMsg.innerHTML = '<div class="message success">✓ Login Successful!</div>';
+    loginEmail.value = '';
+    loginPassword.value = '';
+    showToast('Welcome back!', 'success');
+  } catch (error) {
+    console.error("Login error:", error);
+    let msg = error.message;
+    if (error.code === 'auth/invalid-email') msg = 'Invalid email';
+    else if (error.code === 'auth/user-not-found') msg = 'User not found';
+    else if (error.code === 'auth/wrong-password') msg = 'Wrong password';
+    else if (error.code === 'auth/invalid-credential') msg = 'Invalid credentials';
+    authMsg.innerHTML = `<div class="message error">${msg}</div>`;
+    showToast(msg, 'error');
+  }
 };
 
-/* --------------------------------------------------------------
-   Auto‑login handling (if user already signed in)
-   -------------------------------------------------------------- */
-if(auth.currentUser){
-  document.getElementById('loginBox').classList.add('hidden');
-  document.getElementById('panel').classList.remove('hidden');
-  document.getElementById('map').classList.remove('hidden');
-  initMap();
+document.getElementById("registerBtn").onclick = async () => {
+  const email = loginEmail.value.trim();
+  const password = loginPassword.value;
+  
+  if (!email || !password) {
+    authMsg.innerHTML = '<div class="message error">Enter email and password</div>';
+    return;
+  }
+  
+  if (password.length < 6) {
+    authMsg.innerHTML = '<div class="message error">Password must be 6+ characters</div>';
+    return;
+  }
+  
+  authMsg.innerHTML = '<div class="message info">Creating account...</div>';
+  
+  try {
+    await createUserWithEmailAndPassword(auth, email, password);
+    authMsg.innerHTML = '<div class="message success">✓ Account created!</div>';
+    loginEmail.value = '';
+    loginPassword.value = '';
+    showToast('Account created successfully!', 'success');
+  } catch (error) {
+    console.error("Register error:", error);
+    let msg = error.message;
+    if (error.code === 'auth/email-already-in-use') msg = 'Email already exists';
+    else if (error.code === 'auth/invalid-email') msg = 'Invalid email';
+    authMsg.innerHTML = `<div class="message error">${msg}</div>`;
+    showToast(msg, 'error');
+  }
+};
+
+document.getElementById("logoutBtn").onclick = async () => {
+  try {
+    await signOut(auth);
+    showToast('Logged out successfully', 'info');
+  } catch (e) { 
+    console.error(e); 
+    showToast('Error logging out', 'error');
+  }
+};
+
+document.getElementById("refreshLocationBtn").onclick = requestLocation;
+
+document.getElementById("getPickupLocationBtn").onclick = () => {
+  if (currentPosition) {
+    pickupLat.value = currentPosition.lat.toFixed(6);
+    pickupLng.value = currentPosition.lng.toFixed(6);
+    setPickupMarker(currentPosition.lat, currentPosition.lng);
+    showToast('Current location set!', 'success');
+  } else {
+    showToast('Location not available. Please allow location permission.', 'error');
+  }
+};
+
+// Map controls
+document.getElementById('zoomToCurrentBtn').addEventListener('click', () => {
+  if (currentPosition) {
+    map.setView([currentPosition.lat, currentPosition.lng], 16);
+    if (userMarker) userMarker.openPopup();
+  } else {
+    showToast('Location not available', 'error');
+  }
+});
+
+document.getElementById('showAllDeliveriesBtn').addEventListener('click', loadAllDeliveries);
+
+// ==================== SAVE ====================
+document.getElementById("saveBtn").onclick = async () => {
+  const mobile = mobileInput.value.trim();
+  const name = nameInput.value.trim();
+  const address = addressInput.value.trim();
+  const status = statusSelect.value;
+  const note = noteInput.value.trim();
+  const lat = pickupLat.value ? parseFloat(pickupLat.value) : null;
+  const lng = pickupLng.value ? parseFloat(pickupLng.value) : null;
+  
+  if (!mobile) {
+    saveMsg.innerHTML = '<div class="message error">Mobile number required!</div>';
+    showToast('Mobile number required!', 'error');
+    return;
+  }
+  
+  if (!address) {
+    saveMsg.innerHTML = '<div class="message error">Address required!</div>';
+    showToast('Address required!', 'error');
+    return;
+  }
+  
+  saveMsg.innerHTML = '<div class="message info">Saving...</div>';
+  
+  try {
+    await setDoc(doc(db, "deliveries", mobile), {
+      mobile,
+      name,
+      address,
+      status,
+      note,
+      lat,
+      lng,
+      uid: auth.currentUser.uid,
+      updatedAt: Date.now()
+    });
+    
+    saveMsg.innerHTML = '<div class="message success">✓ Saved: ' + mobile + '</div>';
+    showToast('Delivery saved successfully!', 'success');
+    
+    if (lat && lng) {
+      showDeliveryOnMap(lat, lng, address, status, name, mobile);
+    }
+    
+    loadAllDeliveries();
+    
+  } catch (error) {
+    saveMsg.innerHTML = '<div class="message error">Error: ' + error.message + '</div>';
+    showToast('Error saving delivery', 'error');
+  }
+};
+
+document.getElementById("clearFormBtn").onclick = () => {
+  mobileInput.value = '';
+  nameInput.value = '';
+  addressInput.value = '';
+  statusSelect.value = 'Pending';
+  noteInput.value = '';
+  pickupLat.value = '';
+  pickupLng.value = '';
+  saveMsg.innerHTML = '';
+  selectedDeliveryForDistance = null;
+  distValue.textContent = '--';
+  if (pickupMarker) {
+    map.removeLayer(pickupMarker);
+    pickupMarker = null;
+  }
+};
+
+document.getElementById("deleteBtn").onclick = async () => {
+  const mobile = mobileInput.value.trim();
+  if (!mobile) {
+    showToast('Enter mobile to delete', 'error');
+    return;
+  }
+  if (!confirm('Delete ' + mobile + '?')) return;
+  
+  try {
+    await deleteDoc(doc(db, "deliveries", mobile));
+    showToast('Deleted successfully!', 'success');
+    document.getElementById("clearFormBtn").click();
+    loadAllDeliveries();
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+};
+
+// ==================== SINGLE SEARCH ====================
+let selectedDeliveryForDistance = null;
+
+document.getElementById("singleSearchBtn").onclick = async () => {
+  const searchTerm = document.getElementById("singleSearchInput").value.trim().toLowerCase();
+  const resultDiv = document.getElementById("singleSearchResult");
+  
+  if (!searchTerm) {
+    resultDiv.innerHTML = '<div class="message error">Enter mobile, name, or address to search</div>';
+    return;
+  }
+  
+  try {
+    // Search by mobile
+    let snap = await getDoc(doc(db, "deliveries", searchTerm));
+    
+    if (!snap.exists()) {
+      // Search by name
+      const q = query(collection(db, "deliveries"), where("name", "==", searchTerm));
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        snap = querySnapshot.docs[0];
+      } else {
+        // Search by address (partial match)
+        const allDocs = await getDocs(collection(db, "deliveries"));
+        const matchingDocs = allDocs.docs.filter(d => {
+          const data = d.data();
+          return data.address && data.address.toLowerCase().includes(searchTerm);
+        });
+        
+        if (matchingDocs.length > 0) {
+          snap = matchingDocs[0];
+        }
+      }
+    }
+    
+    if (!snap || !snap.exists()) {
+      resultDiv.innerHTML = `<div class="message warning">⚠️ Not found: "${searchTerm}"</div>`;
+      showToast('No delivery found', 'error');
+      return;
+    }
+    
+    const d = snap.data();
+    const mobile = snap.id;
+    
+    // Fill form
+    mobileInput.value = mobile;
+    nameInput.value = d.name || '';
+    addressInput.value = d.address || '';
+    statusSelect.value = d.status || 'Pending';
+    noteInput.value = d.note || '';
+    pickupLat.value = d.lat || '';
+    pickupLng.value = d.lng || '';
+    
+    let statusClass = 'status-' + (d.status || 'pending').toLowerCase();
+    
+    // Calculate distance
+    let distanceHtml = '';
+    if (d.lat && d.lng && currentPosition) {
+      const dist = calculateDistance(currentPosition.lat, currentPosition.lng, d.lat, d.lng);
+      distanceHtml = `<div class="distance-badge"><i class="fas fa-route"></i> ${formatDistance(dist)}</div>`;
+      
+      selectedDeliveryForDistance = { lat: d.lat, lng: d.lng };
+      distValue.textContent = formatDistance(dist);
+    }
+    
+    resultDiv.innerHTML = `
+      <div class="message success" style="flex-direction:column;align-items:flex-start;">
+        <div style="display:flex;justify-content:space-between;width:100%;flex-wrap:wrap;gap:10px;align-items:center;">
+          <div>
+            <strong>✓ Found: ${mobile}</strong>
+            ${d.name ? `<br><span class="name"><i class="fas fa-user"></i> ${d.name}</span>` : ''}
+          </div>
+          <span class="status-badge ${statusClass}">${d.status}</span>
+        </div>
+        <div style="margin-top:10px;width:100%;">
+          <div style="color:#475569;margin:5px 0;"><i class="fas fa-map-marker-alt"></i> ${d.address}</div>
+          <div style="color:#64748b;font-size:13px;margin:5px 0;"><i class="fas fa-sticky-note"></i> ${d.note || 'No notes'}</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+            ${distanceHtml}
+            ${d.lat && d.lng ? `<button class="nav-btn" onclick="navigateTo(${d.lat},${d.lng},'${d.address.replace(/'/g, "\\'")}')"><i class="fas fa-directions"></i> Navigate</button>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+    
+    if (d.lat && d.lng) {
+      showDeliveryOnMap(d.lat, d.lng, d.address, d.status, d.name, mobile);
+    }
+    
+  } catch (e) {
+    resultDiv.innerHTML = '<div class="message error">Error: ' + e.message + '</div>';
+    showToast('Search error', 'error');
+  }
+};
+
+document.getElementById("clearSingleSearchBtn").onclick = () => {
+  document.getElementById("singleSearchInput").value = '';
+  document.getElementById("singleSearchResult").innerHTML = '';
+  selectedDeliveryForDistance = null;
+  distValue.textContent = '--';
+};
+
+// ==================== MULTIPLE SEARCH ====================
+let searchList = [];
+
+document.getElementById("multiSearchBtn").onclick = async () => {
+  const input = document.getElementById("multiSearchInput").value.trim();
+  const resultsDiv = document.getElementById("multiSearchResults");
+  const tagsDiv = document.getElementById("searchTags");
+  
+  if (!input) {
+    resultsDiv.innerHTML = '<div class="message error">Enter mobile numbers</div>';
+    return;
+  }
+  
+  // Parse numbers
+  const numbers = input.split(/[\s,]+/).filter(n => n.length > 0);
+  searchList = [...new Set(numbers)];
+  
+  if (searchList.length === 0) return;
+  
+  // Show tags
+  tagsDiv.classList.remove('hidden');
+  tagsDiv.innerHTML = searchList.map(n => 
+    `<span class="search-tag" data-mobile="${n}">${n} <span class="remove" onclick="removeSearchTag('${n}')">×</span></span>`
+  ).join('');
+  
+  resultsDiv.innerHTML = '<div class="message info">Searching ' + searchList.length + ' numbers...</div>';
+  
+  let found = [];
+  let notFound = [];
+  
+  for (let mobile of searchList) {
+    try {
+      const snap = await getDoc(doc(db, "deliveries", mobile));
+      
+      if (snap.exists()) {
+        found.push({ mobile, data: snap.data() });
+      } else {
+        notFound.push(mobile);
+      }
+    } catch (e) {
+      notFound.push(mobile);
+    }
+  }
+  
+  // Update tags for not found
+  notFound.forEach(n => {
+    const tag = document.querySelector(`.search-tag[data-mobile="${n}"]`);
+    if (tag) tag.classList.add('not-found');
+  });
+  
+  // Show results
+  let html = '';
+  
+  if (notFound.length > 0) {
+    html += `<div class="message warning">⚠️ Not Found (${notFound.length}): ${notFound.join(', ')}</div>`;
+  }
+  
+  if (found.length > 0) {
+    html += `<div class="message success">✓ Found (${found.length}):</div>`;
+    
+    // Sort by distance if current position available
+    if (currentPosition) {
+      found.sort((a, b) => {
+        const distA = calculateDistance(currentPosition.lat, currentPosition.lng, a.data.lat || 0, a.data.lng || 0);
+        const distB = calculateDistance(currentPosition.lat, currentPosition.lng, b.data.lat || 0, b.data.lng || 0);
+        return distA - distB;
+      });
+    }
+    
+    found.forEach(item => {
+      const d = item.data;
+      const statusClass = 'status-' + (d.status || 'pending').toLowerCase();
+      
+      let distanceHtml = '';
+      if (d.lat && d.lng && currentPosition) {
+        const dist = calculateDistance(currentPosition.lat, currentPosition.lng, d.lat, d.lng);
+        distanceHtml = `<div class="distance-badge"><i class="fas fa-route"></i> ${formatDistance(dist)}</div>`;
+      }
+      
+      html += `
+        <div class="result-item" onclick="loadDelivery('${item.mobile}')">
+          <div class="header">
+            <span class="mobile">📱 ${item.mobile}</span>
+            <span class="status-badge ${statusClass}">${d.status}</span>
+          </div>
+          ${d.name ? `<div class="name"><i class="fas fa-user"></i> ${d.name}</div>` : ''}
+          <div class="address">📍 ${d.address}</div>
+          <div class="meta">
+            <span>📝 ${d.note || 'No notes'}</span>
+            <span>📍 ${d.lat ? d.lat.toFixed(4) + ', ' + d.lng.toFixed(4) : 'No location'}</span>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+            ${distanceHtml}
+            ${d.lat && d.lng ? `<button class="nav-btn" onclick="event.stopPropagation();navigateTo(${d.lat},${d.lng},'${d.address.replace(/'/g, "\\'")}')"><i class="fas fa-directions"></i> Navigate</button>` : ''}
+          </div>
+        </div>
+      `;
+    });
+    
+    // Show first found on map
+    if (found[0].data.lat && found[0].data.lng) {
+      showDeliveryOnMap(found[0].data.lat, found[0].data.lng, found[0].data.address, found[0].data.status, found[0].data.name, found[0].mobile);
+      
+      selectedDeliveryForDistance = { lat: found[0].data.lat, lng: found[0].data.lng };
+      const dist = calculateDistance(currentPosition.lat, currentPosition.lng, found[0].data.lat, found[0].data.lng);
+      distValue.textContent = formatDistance(dist);
+    }
+  } else if (notFound.length === searchList.length) {
+    html += '<div class="message error">No deliveries found!</div>';
+  }
+  
+  resultsDiv.innerHTML = html;
+};
+
+document.getElementById("clearSearchBtn").onclick = () => {
+  document.getElementById("multiSearchInput").value = '';
+  document.getElementById("searchTags").innerHTML = '';
+  document.getElementById("searchTags").classList.add('hidden');
+  document.getElementById("multiSearchResults").innerHTML = '';
+  searchList = [];
+  selectedDeliveryForDistance = null;
+  distValue.textContent = '--';
+};
+
+window.removeSearchTag = function(mobile) {
+  searchList = searchList.filter(n => n !== mobile);
+  document.getElementById("searchTags").innerHTML = searchList.map(n => 
+    `<span class="search-tag" data-mobile="${n}">${n} <span class="remove" onclick="removeSearchTag('${n}')">×</span></span>`
+  ).join('');
+};
+
+window.loadDelivery = function(mobile) {
+  document.getElementById("singleSearchInput").value = mobile;
+  document.getElementById("singleSearchBtn").click();
+};
+
+// Navigation function
+window.navigateTo = function(lat, lng, address) {
+  const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${encodeURIComponent(address || '')}`;
+  window.open(url, '_blank');
+};
+
+function showDeliveryOnMap(lat, lng, address, status, name = '', mobile = '') {
+  if (!map) return;
+  
+  deliveryMarkers.forEach(m => map.removeLayer(m));
+  deliveryMarkers = [];
+  
+  let color = '#f59e0b';
+  let iconEmoji = '📦';
+  if (status === 'Delivered') { color = '#10b981'; iconEmoji = '✅'; }
+  else if (status === 'Returned') { color = '#ef4444'; iconEmoji = '↩️'; }
+  
+  const icon = L.divIcon({
+    html: `<div style="background:${color};width:32px;height:32px;border-radius:50%;border:4px solid #fff;box-shadow:0 3px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:bold;">${iconEmoji}</div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16]
+  });
+  
+  const popupContent = `
+    <div style="min-width:200px;">
+      <div style="font-weight:bold;font-size:16px;margin-bottom:5px;">${status}</div>
+      <div style="color:#64748b;margin:5px 0;">${mobile}</div>
+      ${name ? `<div style="color:#6366f1;margin:5px 0;">${name}</div>` : ''}
+      <div style="margin:5px 0;">${address}</div>
+      ${lat && lng ? `<div style="margin-top:10px;">
+        <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" style="background:#10b981;color:#fff;padding:8px 16px;border-radius:20px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600;">
+          <i class="fas fa-directions"></i> Navigate
+        </a>
+      </div>` : ''}
+    </div>
+  `;
+  
+  const marker = L.marker([lat, lng], { icon: icon })
+    .addTo(map)
+    .bindPopup(popupContent)
+    .openPopup();
+  
+  deliveryMarkers.push(marker);
+  map.setView([lat, lng], 16);
 }
+
+// ==================== LOAD ALL DELIVERIES ====================
+async function loadAllDeliveries() {
+  try {
+    const snapshot = await getDocs(collection(db, "deliveries"));
+    allDeliveries = [];
+    
+    let pending = 0, delivered = 0, returned = 0;
+    
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      data.id = doc.id;
+      allDeliveries.push(data);
+      
+      if (data.status === 'Pending') pending++;
+      else if (data.status === 'Delivered') delivered++;
+      else if (data.status === 'Returned') returned++;
+    });
+    
+    // Update stats
+    document.getElementById('pendingCount').textContent = pending;
+    document.getElementById('deliveredCount').textContent = delivered;
+    document.getElementById('returnedCount').textContent = returned;
+    
+    // Show on map
+    displayAllMarkers();
+    
+  } catch (e) {
+    console.error('Error loading deliveries:', e);
+    showToast('Error loading deliveries', 'error');
+  }
+}
+
+function displayAllMarkers() {
+  deliveryMarkers.forEach(m => map.removeLayer(m));
+  deliveryMarkers = [];
+  
+  const filtered = activeFilter === 'all' 
+    ? allDeliveries 
+    : allDeliveries.filter(d => d.status === activeFilter);
+  
+  filtered.forEach(d => {
+    if (!d.lat || !d.lng) return;
+    
+    let color = '#f59e0b';
+    let iconEmoji = '📦';
+    if (d.status === 'Delivered') { color = '#10b981'; iconEmoji = '✅'; }
+    else if (d.status === 'Returned') { color = '#ef4444'; iconEmoji = '↩️'; }
+    
+    const icon = L.divIcon({
+      html: `<div style="background:${color};width:28px;height:28px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;">${iconEmoji}</div>`,
+      iconSize: [28, 28],
+      iconAnchor: [14, 14]
+    });
+    
+    const marker = L.marker([d.lat, d.lng], { icon: icon })
+      .addTo(map)
+      .bindPopup(`
+        <div style="min-width:180px;">
+          <div style="font-weight:bold;">${d.status}</div>
+          <div>${d.mobile}</div>
+          ${d.name ? `<div>${d.name}</div>` : ''}
+          <div>${d.address}</div>
+        </div>
+      `);
+    
+    deliveryMarkers.push(marker);
+  });
+  
+  // Fit bounds if we have markers
+  if (deliveryMarkers.length > 0) {
+    const group = L.featureGroup(deliveryMarkers);
+    map.fitBounds(group.getBounds().pad(0.1));
+  }
+}
+
+function filterMarkers() {
+  displayAllMarkers();
+}
+
+// Enter key handlers
+document.getElementById("singleSearchInput").addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') document.getElementById("singleSearchBtn").click();
+});
+
+loginPassword.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') document.getElementById("loginBtn").click();
+});
 </script>
-
 </body>
 </html>
