@@ -7,7 +7,7 @@
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
@@ -46,28 +46,71 @@ body {
   min-height: 100vh;
   color: #334155;
   background-attachment: fixed;
+  padding-bottom: 50px;
 }
 
 .bg-pattern {
   position: fixed;
   top: 0; left: 0; width: 100%; height: 100%;
   background-image: 
-    radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(16, 185, 129, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 40% 80%, rgba(245, 158, 11, 0.08) 0%, transparent 40%);
+    radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(16, 185, 129, 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 40% 80%, rgba(245, 158, 11, 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 90% 90%, rgba(236, 72, 153, 0.08) 0%, transparent 40%);
   pointer-events: none;
   z-index: -1;
 }
 
+/* Scrolling Marquee */
+.marquee-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899, #6366f1);
+  background-size: 300% 100%;
+  animation: marquee-gradient 20s linear infinite;
+  padding: 12px 0;
+  z-index: 10000;
+  box-shadow: 0 -4px 20px rgba(99, 102, 241, 0.4);
+}
+
+@keyframes marquee-gradient {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
+
+.marquee-content {
+  white-space: nowrap;
+  animation: marquee 30s linear infinite;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  letter-spacing: 1px;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.marquee-content span {
+  margin: 0 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .topbar {
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%);
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.97) 0%, rgba(30, 41, 59, 0.97) 100%);
   backdrop-filter: blur(20px);
   color: #fff;
-  padding: 20px 30px;
-  font-size: 24px;
-  font-weight: 700;
+  padding: 22px 30px;
+  font-size: 26px;
+  font-weight: 800;
   letter-spacing: 0.5px;
-  box-shadow: 0 4px 30px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 30px rgba(0,0,0,0.4);
   border-bottom: 1px solid rgba(255,255,255,0.1);
   display: flex;
   align-items: center;
@@ -79,39 +122,39 @@ body {
 }
 
 .topbar i {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, #6366f1, #ec4899);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .topbar .live-dot {
-  width: 8px; height: 8px;
+  width: 10px; height: 10px;
   background: #10b981;
   border-radius: 50%;
-  animation: pulse-glow 2s ease-in-out infinite;
+  animation: pulse-glow 1.5s ease-in-out infinite;
   margin-left: auto;
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-  50% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.8); transform: scale(1); }
+  50% { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); transform: scale(1.1); }
 }
 
-.container { max-width: 1400px; margin: auto; padding: 24px; }
+.container { max-width: 1450px; margin: auto; padding: 24px; }
 
 .card {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(20px);
   border-radius: var(--radius-xl);
   padding: 28px;
   margin-bottom: 24px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-  border: 1px solid rgba(255,255,255,0.3);
+  border: 1px solid rgba(255,255,255,0.4);
   transition: var(--transition);
 }
 
-.card:hover { box-shadow: 0 12px 40px rgba(0,0,0,0.15); }
+.card:hover { box-shadow: 0 12px 45px rgba(0,0,0,0.18); }
 
 .card h3 {
   color: #0f172a;
@@ -119,13 +162,18 @@ body {
   padding-bottom: 14px;
   border-bottom: 2px solid #e2e8f0;
   font-size: 20px;
-  font-weight: 600;
+  font-weight: 700;
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.card h3 i { color: #6366f1; }
+.card h3 i { 
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
 
 .form-group { margin-bottom: 18px; }
 
@@ -137,14 +185,14 @@ body {
   font-size: 14px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
-.form-group label i { color: #6366f1; font-size: 12px; }
+.form-group label i { color: #6366f1; font-size: 13px; }
 
 input, select, textarea {
   width: 100%;
-  padding: 14px 18px;
+  padding: 15px 18px;
   margin: 6px 0;
   border: 2px solid #e2e8f0;
   border-radius: var(--radius-md);
@@ -181,14 +229,16 @@ textarea { resize: vertical; min-height: 100px; }
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+  background-size: 200% 200%;
   color: #fff;
-  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.45);
 }
 
 .btn-primary:hover {
+  background-position: 100% 100%;
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5);
+  box-shadow: 0 8px 30px rgba(99, 102, 241, 0.55);
 }
 
 .btn-secondary {
@@ -202,26 +252,26 @@ textarea { resize: vertical; min-height: 100px; }
 .btn-danger {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: #fff;
-  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.35);
 }
 
-.btn-danger:hover { box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4); }
+.btn-danger:hover { box-shadow: 0 6px 20px rgba(239, 68, 68, 0.45); }
 
 .btn-success {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: #fff;
-  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);
 }
 
-.btn-success:hover { box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4); }
-
-.btn-warning {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  color: #fff;
-}
+.btn-success:hover { box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45); }
 
 .btn-info {
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: #fff;
+}
+
+.btn-warning {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   color: #fff;
 }
 
@@ -250,13 +300,15 @@ textarea { resize: vertical; min-height: 100px; }
 .status-delivered { background: #d1fae5; color: #059669; }
 .status-returned { background: #fee2e2; color: #dc2626; }
 
-#map {
-  height: 550px;
+#map, #map2 {
+  height: 450px;
   border-radius: var(--radius-lg);
   margin-top: 20px;
   box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);
   border: 3px solid #e2e8f0;
 }
+
+#map { margin-bottom: 15px; }
 
 .message {
   padding: 16px 20px;
@@ -286,25 +338,32 @@ textarea { resize: vertical; min-height: 100px; }
 }
 
 .auth-card {
-  max-width: 460px;
+  max-width: 480px;
   width: 100%;
-  background: rgba(255,255,255,0.95);
+  background: rgba(255,255,255,0.96);
   backdrop-filter: blur(20px);
   border-radius: var(--radius-xl);
-  padding: 40px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-  border: 1px solid rgba(255,255,255,0.3);
+  padding: 45px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.4);
 }
 
 .auth-card .logo { text-align: center; margin-bottom: 35px; }
 
 .auth-card .logo h2 {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899);
+  background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899, #f43f5e);
+  background-size: 300% 300%;
+  animation: logo-gradient 5s ease infinite;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  font-size: 32px;
+  font-size: 34px;
   font-weight: 800;
+}
+
+@keyframes logo-gradient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
 .auth-card .logo p { color: #64748b; margin-top: 8px; font-size: 15px; }
@@ -317,9 +376,10 @@ textarea { resize: vertical; min-height: 100px; }
   margin: 15px 0;
   align-items: center;
   flex-wrap: wrap;
-  background: #f8fafc;
-  padding: 15px;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  padding: 16px;
   border-radius: var(--radius-md);
+  border: 2px solid #e2e8f0;
 }
 
 .location-status {
@@ -327,13 +387,13 @@ textarea { resize: vertical; min-height: 100px; }
   align-items: center;
   gap: 10px;
   font-size: 14px;
-  color: #64748b;
-  font-weight: 500;
+  color: #475569;
+  font-weight: 600;
 }
 
 .location-status .dot {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: #94a3b8;
   position: relative;
@@ -341,29 +401,26 @@ textarea { resize: vertical; min-height: 100px; }
 
 .location-status .dot.active {
   background: #10b981;
-  animation: pulse-dot 2s infinite;
+  animation: pulse-dot 1.5s infinite;
 }
 
 .location-status .dot.error { background: #ef4444; }
 
 @keyframes pulse-dot {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.3); opacity: 0.7; }
+  0%, 100% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  50% { transform: scale(1.2); opacity: 0.8; box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
 }
 
-.search-container {
-  position: relative;
-  margin-bottom: 15px;
-}
+.search-container { position: relative; margin-bottom: 15px; }
 
 .search-container input {
-  padding-left: 45px;
+  padding-left: 48px;
   background: #f8fafc;
 }
 
 .search-container i {
   position: absolute;
-  left: 16px;
+  left: 18px;
   top: 50%;
   transform: translateY(-50%);
   color: #94a3b8;
@@ -377,7 +434,7 @@ textarea { resize: vertical; min-height: 100px; }
 }
 
 .search-tag {
-  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
   color: #4338ca;
   padding: 8px 16px;
   border-radius: 20px;
@@ -385,7 +442,7 @@ textarea { resize: vertical; min-height: 100px; }
   display: flex;
   align-items: center;
   gap: 8px;
-  font-weight: 500;
+  font-weight: 600;
   animation: fadeIn 0.3s ease;
 }
 
@@ -399,7 +456,7 @@ textarea { resize: vertical; min-height: 100px; }
 .search-tag .remove:hover { opacity: 1; }
 
 .search-tag.not-found {
-  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
   color: #dc2626;
 }
 
@@ -415,11 +472,11 @@ textarea { resize: vertical; min-height: 100px; }
 .results-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
 
 .result-item {
-  padding: 18px;
+  padding: 20px;
   border: 2px solid #e2e8f0;
   border-radius: var(--radius-md);
   margin-bottom: 12px;
-  background: #f8fafc;
+  background: linear-gradient(135deg, #f8fafc, #fff);
   transition: var(--transition);
   cursor: pointer;
 }
@@ -428,6 +485,7 @@ textarea { resize: vertical; min-height: 100px; }
   background: #fff;
   border-color: #6366f1;
   transform: translateX(4px);
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15);
 }
 
 .result-item .header {
@@ -440,15 +498,19 @@ textarea { resize: vertical; min-height: 100px; }
 }
 
 .result-item .mobile {
-  font-weight: 700;
+  font-weight: 800;
   color: #0f172a;
-  font-size: 16px;
+  font-size: 17px;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.result-item .name { font-weight: 600; color: #6366f1; font-size: 14px; }
+.result-item .name { 
+  font-weight: 600; 
+  color: #6366f1; 
+  font-size: 14px; 
+}
 
 .result-item .address {
   color: #475569;
@@ -474,35 +536,37 @@ textarea { resize: vertical; min-height: 100px; }
 .distance-badge {
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
   color: #fff;
-  padding: 6px 14px;
+  padding: 8px 16px;
   border-radius: 20px;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  box-shadow: 0 3px 10px rgba(99, 102, 241, 0.4);
 }
 
-.distance-badge i { font-size: 11px; }
+.distance-badge i { font-size: 12px; }
 
 .nav-btn {
   background: linear-gradient(135deg, #10b981, #059669);
   color: #fff;
-  padding: 8px 16px;
+  padding: 10px 18px;
   border-radius: 20px;
   border: none;
   cursor: pointer;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   transition: var(--transition);
+  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.3);
 }
 
 .nav-btn:hover {
   transform: scale(1.05);
-  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 5px 20px rgba(16, 185, 129, 0.5);
 }
 
 .hidden { display: none !important; }
@@ -513,54 +577,62 @@ textarea { resize: vertical; min-height: 100px; }
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
   margin-bottom: 20px;
 }
 
 .stat-card {
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  padding: 20px;
-  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #f8fafc, #fff);
+  padding: 24px;
+  border-radius: var(--radius-lg);
   border: 2px solid #e2e8f0;
   text-align: center;
   transition: var(--transition);
 }
 
-.stat-card:hover { border-color: #6366f1; transform: translateY(-2px); }
+.stat-card:hover { 
+  border-color: #6366f1; 
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(99, 102, 241, 0.2);
+}
 
 .stat-card .icon {
-  width: 50px;
-  height: 50px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 12px;
-  font-size: 22px;
+  margin: 0 auto 14px;
+  font-size: 24px;
 }
 
 .stat-card .count {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 800;
-  color: #0f172a;
+  background: linear-gradient(135deg, #0f172a, #334155);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.stat-card .label { color: #64748b; font-size: 13px; font-weight: 500; }
+.stat-card .label { color: #64748b; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
-.pending .icon { background: #fef3c7; color: #d97706; }
-.delivered .icon { background: #d1fae5; color: #059669; }
-.returned .icon { background: #fee2e2; color: #dc2626; }
+.pending .icon { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #d97706; }
+.delivered .icon { background: linear-gradient(135deg, #d1fae5, #a7f3d0); color: #059669; }
+.returned .icon { background: linear-gradient(135deg, #fee2e2, #fecaca); color: #dc2626; }
 
 .map-controls {
   display: flex;
   gap: 10px;
   margin-bottom: 15px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .map-controls .btn {
-  padding: 10px 18px;
+  padding: 12px 20px;
   font-size: 13px;
 }
 
@@ -570,16 +642,17 @@ textarea { resize: vertical; min-height: 100px; }
   background: #f8fafc;
   padding: 8px;
   border-radius: var(--radius-md);
+  border: 2px solid #e2e8f0;
 }
 
 .layer-btn {
-  padding: 8px 14px;
+  padding: 10px 16px;
   border: 2px solid #e2e8f0;
   border-radius: var(--radius-sm);
   background: #fff;
   cursor: pointer;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   transition: var(--transition);
   display: flex;
   align-items: center;
@@ -588,7 +661,7 @@ textarea { resize: vertical; min-height: 100px; }
 
 .layer-btn.active {
   border-color: #6366f1;
-  background: #e0e7ff;
+  background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
   color: #4338ca;
 }
 
@@ -607,20 +680,21 @@ textarea { resize: vertical; min-height: 100px; }
 }
 
 .filter-btn {
-  padding: 8px 16px;
+  padding: 10px 18px;
   border: 2px solid #e2e8f0;
   border-radius: 20px;
   background: #fff;
   cursor: pointer;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   transition: var(--transition);
 }
 
 .filter-btn.active {
-  background: #6366f1;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
   color: #fff;
   border-color: #6366f1;
+  box-shadow: 0 3px 10px rgba(99, 102, 241, 0.4);
 }
 
 .toast-container {
@@ -634,24 +708,24 @@ textarea { resize: vertical; min-height: 100px; }
 }
 
 .toast {
-  padding: 16px 20px;
+  padding: 18px 22px;
   border-radius: var(--radius-md);
   background: #fff;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.25);
   display: flex;
   align-items: center;
-  gap: 12px;
-  animation: slideIn 0.3s ease;
-  min-width: 300px;
-  font-weight: 500;
+  gap: 14px;
+  animation: slideIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  min-width: 320px;
+  font-weight: 600;
 }
 
-.toast.success { border-left: 4px solid #10b981; }
-.toast.error { border-left: 4px solid #ef4444; }
-.toast.info { border-left: 4px solid #3b82f6; }
+.toast.success { border-left: 5px solid #10b981; }
+.toast.error { border-left: 5px solid #ef4444; }
+.toast.info { border-left: 5px solid #3b82f6; }
 
 @keyframes slideIn {
-  from { transform: translateX(100%); opacity: 0; }
+  from { transform: translateX(120%); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
 }
 
@@ -660,56 +734,102 @@ textarea { resize: vertical; min-height: 100px; }
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Dual Map Container */
+.dual-map-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.dual-map-container .map-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.dual-map-container .map-label {
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dual-map-container .map-label i {
+  color: #6366f1;
+}
+
+@media (max-width: 1100px) {
+  .dual-map-container { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 768px) {
   .container { padding: 15px; }
   .card { padding: 20px; }
-  #map { height: 400px; }
+  #map, #map2 { height: 350px; }
   .btn-group .btn { min-width: 100%; }
   .auth-card { padding: 25px; }
   .header-stats { flex-direction: column; align-items: stretch; }
+  .stats-grid { grid-template-columns: 1fr; }
 }
 
-.dark-mode-toggle {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  font-size: 20px;
-  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
-  z-index: 999;
-  transition: var(--transition);
+/* Additional Features Styles */
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
-.dark-mode-toggle:hover { transform: scale(1.1); }
-
-.fullscreen-btn {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  z-index: 1000;
-  background: #fff;
+.quick-action-btn {
+  background: linear-gradient(135deg, #f8fafc, #fff);
   border: 2px solid #e2e8f0;
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  text-align: center;
   cursor: pointer;
   transition: var(--transition);
 }
 
-.fullscreen-btn:hover { background: #f8fafc; }
+.quick-action-btn:hover {
+  border-color: #6366f1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
+}
 
-.leaflet-container.fullscreen {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  z-index: 9999;
+.quick-action-btn i {
+  font-size: 24px;
+  color: #6366f1;
+  margin-bottom: 8px;
+}
+
+.quick-action-btn span {
+  display: block;
+  font-weight: 600;
+  font-size: 13px;
+  color: #475569;
+}
+
+.accuracy-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f0fdf4;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #059669;
+}
+
+.accuracy-indicator.low {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.accuracy-indicator.high {
+  background: #d1fae5;
+  color: #059669;
 }
 </style>
 </head>
@@ -720,11 +840,26 @@ textarea { resize: vertical; min-height: 100px; }
 <div class="topbar">
   <i class="fas fa-truck-fast"></i>
   Delivery Map Pro
-  <span style="font-size:14px;font-weight:400;opacity:0.8;margin-left:10px;">Advanced Delivery Management</span>
+  <span style="font-size:14px;font-weight:400;opacity:0.8;margin-left:10px;">Advanced Delivery Management System</span>
   <div class="live-dot"></div>
 </div>
 
 <div class="toast-container" id="toastContainer"></div>
+
+<div class="marquee-container">
+  <div class="marquee-content">
+    <span><i class="fas fa-star"></i> 🚚 Delivery Map Pro - Built by Ars Abdur Rahman Sheikh</span>
+    <span><i class="fas fa-star"></i> 🚚 Advanced Delivery Management System</span>
+    <span><i class="fas fa-star"></i> 🚚 Real-time GPS Tracking</span>
+    <span><i class="fas fa-star"></i> 🚚 Built by Ars Abdur Rahman Sheikh</span>
+    <span><i class="fas fa-star"></i> 🚚 Multiple Map Views</span>
+    <span><i class="fas fa-star"></i> 🚚 Built by Ars Abdur Rahman Sheikh</span>
+    <span><i class="fas fa-star"></i> 🚚 Accurate Distance Calculation</span>
+    <span><i class="fas fa-star"></i> 🚚 Built by Ars Abdur Rahman Sheikh</span>
+    <span><i class="fas fa-star"></i> 🚚 Professional Delivery Tracking</span>
+    <span><i class="fas fa-star"></i> 🚚 Built by Ars Abdur Rahman Sheikh</span>
+  </div>
+</div>
 
 <div class="container">
 
@@ -762,7 +897,9 @@ textarea { resize: vertical; min-height: 100px; }
         <i class="fas fa-user-circle" style="color:#6366f1;"></i>
         Welcome, <span id="userEmail" style="color:#6366f1;"></span>
       </h3>
-      <p style="color:#64748b;margin-top:5px;font-size:14px;"><i class="fas fa-clock"></i> <span id="currentTime"></span></p>
+      <p style="color:#64748b;margin-top:8px;font-size:14px;display:flex;align-items:center;gap:8px;">
+        <i class="fas fa-clock"></i> <span id="currentTime"></span>
+      </p>
     </div>
     <button id="logoutBtn" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</button>
   </div>
@@ -772,10 +909,13 @@ textarea { resize: vertical; min-height: 100px; }
       <span class="dot" id="locationDot"></span>
       <span id="locationStatusText">Getting location...</span>
     </div>
+    <div id="accuracyDisplay" class="accuracy-indicator">
+      <i class="fas fa-crosshairs"></i> <span id="accuracyValue">--</span>
+    </div>
     <button id="refreshLocationBtn" class="btn btn-secondary" style="padding:10px 16px;font-size:13px;">
       <i class="fas fa-location-dot"></i> Refresh
     </button>
-    <div id="currentDistance" style="margin-left:auto;font-weight:600;color:#6366f1;font-size:14px;">
+    <div id="currentDistance" style="margin-left:auto;font-weight:700;color:#6366f1;font-size:15px;display:flex;align-items:center;gap:8px;">
       <i class="fas fa-route"></i> Distance: <span id="distValue">--</span>
     </div>
   </div>
@@ -800,24 +940,47 @@ textarea { resize: vertical; min-height: 100px; }
   </div>
 </div>
 
+<!-- Quick Actions -->
+<div class="card">
+  <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+  <div class="quick-actions">
+    <div class="quick-action-btn" onclick="document.getElementById('mobileInput').focus()">
+      <i class="fas fa-plus-circle"></i>
+      <span>New Delivery</span>
+    </div>
+    <div class="quick-action-btn" onclick="document.getElementById('singleSearchInput').focus()">
+      <i class="fas fa-search"></i>
+      <span>Search</span>
+    </div>
+    <div class="quick-action-btn" onclick="document.getElementById('zoomToCurrentBtn').click()">
+      <i class="fas fa-location-arrow"></i>
+      <span>My Location</span>
+    </div>
+    <div class="quick-action-btn" onclick="document.getElementById('showAllDeliveriesBtn').click()">
+      <i class="fas fa-boxes-stacked"></i>
+      <span>Show All</span>
+    </div>
+  </div>
+</div>
+
 <!-- Add/Update Delivery -->
 <div class="card">
   <h3><i class="fas fa-plus-circle"></i> Add / Update Delivery</h3>
   
   <div class="flex" style="gap:15px;">
-    <div style="flex:1;min-width:200px;">
+    <div style="flex:1;min-width:180px;">
       <div class="form-group">
         <label><i class="fas fa-mobile-alt"></i> Mobile Number *</label>
         <input type="tel" id="mobileInput" placeholder="01XXXXXXXXX">
       </div>
     </div>
-    <div style="flex:1;min-width:200px;">
+    <div style="flex:1;min-width:180px;">
       <div class="form-group">
         <label><i class="fas fa-user"></i> Customer Name</label>
         <input type="text" id="nameInput" placeholder="Customer name">
       </div>
     </div>
-    <div style="flex:1;min-width:200px;">
+    <div style="flex:1;min-width:180px;">
       <div class="form-group">
         <label><i class="fas fa-flag"></i> Delivery Status</label>
         <select id="statusSelect">
@@ -861,8 +1024,8 @@ textarea { resize: vertical; min-height: 100px; }
 <div class="card">
   <h3><i class="fas fa-search"></i> Single Search</h3>
   <div class="search-container">
-    <i class="fas fa-mobile-alt"></i>
-    <input type="text" id="singleSearchInput" placeholder="Search by mobile, name, or address...">
+    <i class="fas fa-search"></i>
+    <input type="text" id="singleSearchInput" placeholder="Search by mobile, name, address, or notes...">
   </div>
   <div class="btn-group">
     <button id="singleSearchBtn" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
@@ -894,13 +1057,14 @@ textarea { resize: vertical; min-height: 100px; }
   <div class="map-controls">
     <button id="zoomToCurrentBtn" class="btn btn-secondary"><i class="fas fa-location-arrow"></i> My Location</button>
     <button id="showAllDeliveriesBtn" class="btn btn-secondary"><i class="fas fa-boxes-stacked"></i> Show All</button>
-    <button id="toggleFullscreenBtn" class="btn btn-secondary"><i class="fas fa-expand"></i> Fullscreen</button>
     
     <div class="layer-control">
       <button class="layer-btn active" data-layer="street"><i class="fas fa-road"></i> Street</button>
       <button class="layer-btn" data-layer="satellite"><i class="fas fa-satellite"></i> Satellite</button>
       <button class="layer-btn" data-layer="terrain"><i class="fas fa-mountain"></i> Terrain</button>
     </div>
+    
+    <button id="dualMapBtn" class="btn btn-info"><i class="fas fa-columns"></i> Dual View</button>
   </div>
   
   <div class="filter-group" style="margin-bottom:15px;">
@@ -910,12 +1074,15 @@ textarea { resize: vertical; min-height: 100px; }
     <button class="filter-btn" data-filter="Returned">Returned</button>
   </div>
   
-  <div id="map"></div>
-  <div id="mapLegend" style="position:absolute;bottom:30px;left:10px;background:white;padding:10px 15px;border-radius:8px;font-size:12px;box-shadow:0 2px 10px rgba(0,0,0,0.2);z-index:1000;">
-    <div style="display:flex;align-items:center;gap:8px;margin:5px 0;"><span style="width:12px;height:12px;background:#6366f1;border-radius:50%;"></span> My Location</div>
-    <div style="display:flex;align-items:center;gap:8px;margin:5px 0;"><span style="width:12px;height:12px;background:#f59e0b;border-radius:50%;"></span> Pending</div>
-    <div style="display:flex;align-items:center;gap:8px;margin:5px 0;"><span style="width:12px;height:12px;background:#10b981;border-radius:50%;"></span> Delivered</div>
-    <div style="display:flex;align-items:center;gap:8px;margin:5px 0;"><span style="width:12px;height:12px;background:#ef4444;border-radius:50%;"></span> Returned</div>
+  <div id="mapContainer">
+    <div id="map"></div>
+  </div>
+  
+  <div id="mapLegend" style="position:absolute;bottom:30px;left:10px;background:white;padding:12px 16px;border-radius:8px;font-size:12px;box-shadow:0 2px 15px rgba(0,0,0,0.2);z-index:1000;">
+    <div style="display:flex;align-items:center;gap:8px;margin:6px 0;"><span style="width:14px;height:14px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:50%;"></span> My Location</div>
+    <div style="display:flex;align-items:center;gap:8px;margin:6px 0;"><span style="width:14px;height:14px;background:#f59e0b;border-radius:50%;"></span> Pending</div>
+    <div style="display:flex;align-items:center;gap:8px;margin:6px 0;"><span style="width:14px;height:14px;background:#10b981;border-radius:50%;"></span> Delivered</div>
+    <div style="display:flex;align-items:center;gap:8px;margin:6px 0;"><span style="width:14px;height:14px;background:#ef4444;border-radius:50%;"></span> Returned</div>
   </div>
 </div>
 
@@ -952,6 +1119,8 @@ const authMsg = document.getElementById("authMsg");
 const userEmail = document.getElementById("userEmail");
 const locationDot = document.getElementById("locationDot");
 const locationStatusText = document.getElementById("locationStatusText");
+const accuracyValue = document.getElementById("accuracyValue");
+const accuracyDisplay = document.getElementById("accuracyDisplay");
 const distValue = document.getElementById("distValue");
 
 const mobileInput = document.getElementById("mobileInput");
@@ -963,16 +1132,22 @@ const pickupLat = document.getElementById("pickupLat");
 const pickupLng = document.getElementById("pickupLng");
 const saveMsg = document.getElementById("saveMsg");
 
-let map;
+let map, map2;
 let userMarker = null;
+let userMarker2 = null;
 let pickupMarker = null;
 let deliveryMarkers = [];
+let deliveryMarkers2 = [];
 let watchId = null;
 let currentPosition = null;
 let streetLayer, satelliteLayer, terrainLayer;
+let streetLayer2, satelliteLayer2, terrainLayer2;
 let currentLayer = 'street';
 let allDeliveries = [];
 let activeFilter = 'all';
+let isDualView = false;
+let selectedDeliveryForDistance = null;
+let locationPermissionGranted = false;
 
 // ==================== UTILITIES ====================
 function showToast(message, type = 'info') {
@@ -985,7 +1160,7 @@ function showToast(message, type = 'info') {
 }
 
 function formatDistance(meters) {
-  if (!meters) return '--';
+  if (!meters || meters === Infinity || isNaN(meters)) return '--';
   if (meters < 1000) {
     return meters.toFixed(0) + ' m';
   } else {
@@ -993,8 +1168,10 @@ function formatDistance(meters) {
   }
 }
 
-// Haversine formula for accurate distance calculation
+// Accurate Haversine formula for distance calculation
 function calculateDistance(lat1, lon1, lat2, lon2) {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+  
   const R = 6371000; // Earth's radius in meters
   const φ1 = lat1 * Math.PI / 180;
   const φ2 = lat2 * Math.PI / 180;
@@ -1009,18 +1186,37 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
+function getAccuracyClass(accuracy) {
+  if (accuracy <= 10) return 'high';
+  if (accuracy <= 50) return '';
+  return 'low';
+}
+
 function updateCurrentTime() {
   const now = new Date();
-  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
   document.getElementById('currentTime').textContent = now.toLocaleDateString('en-US', options);
 }
 setInterval(updateCurrentTime, 1000);
 updateCurrentTime();
 
+function formatTimestamp(timestamp) {
+  if (!timestamp) return 'N/A';
+  const date = new Date(timestamp);
+  return date.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
 // ==================== MAP ====================
 function initMap() {
   if (map) map.remove();
+  if (map2) map2.remove();
   
+  // Main Map
   map = L.map('map', {
     zoomControl: true,
     attributionControl: true
@@ -1046,7 +1242,7 @@ function initMap() {
   
   streetLayer.addTo(map);
   
-  // Geocoder for address search
+  // Geocoder
   const geocoder = L.Control.geocoder({
     defaultMarkGeocode: false,
     placeholder: 'Search address...'
@@ -1059,7 +1255,7 @@ function initMap() {
     showToast('Address found!', 'success');
   }).addTo(map);
   
-  // Click on map to set pickup location
+  // Click on map
   map.on('click', function(e) {
     pickupLat.value = e.latlng.lat.toFixed(6);
     pickupLng.value = e.latlng.lng.toFixed(6);
@@ -1074,6 +1270,7 @@ function initMap() {
       btn.classList.add('active');
       const layer = btn.dataset.layer;
       switchLayer(layer);
+      if (isDualView && map2) switchLayer2(layer);
     });
   });
   
@@ -1087,17 +1284,84 @@ function initMap() {
     });
   });
   
-  // Fullscreen button
-  document.getElementById('toggleFullscreenBtn').addEventListener('click', () => {
-    const mapContainer = document.getElementById('map').parentElement;
-    if (document.fullscreenElement) {
-      document.exitFullscreen();
-    } else {
-      mapContainer.requestFullscreen();
-    }
-  });
+  // Dual view toggle
+  document.getElementById('dualMapBtn').addEventListener('click', toggleDualView);
   
   requestLocation();
+}
+
+function toggleDualView() {
+  isDualView = !isDualView;
+  const container = document.getElementById('mapContainer');
+  const btn = document.getElementById('dualMapBtn');
+  
+  if (isDualView) {
+    btn.innerHTML = '<i class="fas fa-columns"></i> Single View';
+    container.innerHTML = `
+      <div class="dual-map-container">
+        <div class="map-section">
+          <div class="map-label"><i class="fas fa-road"></i> Street View</div>
+          <div id="map"></div>
+        </div>
+        <div class="map-section">
+          <div class="map-label"><i class="fas fa-satellite"></i> Satellite View</div>
+          <div id="map2"></div>
+        </div>
+      </div>
+    `;
+    
+    // Initialize second map
+    map2 = L.map('map2', {
+      zoomControl: true,
+      attributionControl: true
+    }).setView([23.8103, 90.4125], 12);
+    
+    streetLayer2 = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap',
+      maxZoom: 19
+    });
+    
+    satelliteLayer2 = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: '© Esri',
+      maxZoom: 19
+    });
+    
+    terrainLayer2 = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenTopoMap',
+      maxZoom: 17
+    });
+    
+    streetLayer2.addTo(map2);
+    
+    // Sync second map with main map
+    map.on('move', () => {
+      if (map2) map2.setView(map.getCenter(), map.getZoom());
+    });
+    
+    // Reinitialize main map
+    initMap();
+    isDualView = true;
+    document.getElementById('dualMapBtn').innerHTML = '<i class="fas fa-columns"></i> Single View';
+    
+    // Show user on both maps
+    if (currentPosition) {
+      updateUserMarker(currentPosition);
+    }
+    
+    // Show deliveries on both maps
+    displayAllMarkers();
+    
+  } else {
+    btn.innerHTML = '<i class="fas fa-columns"></i> Dual View';
+    container.innerHTML = '<div id="map"></div>';
+    
+    if (map2) {
+      map2.remove();
+      map2 = null;
+    }
+    
+    initMap();
+  }
 }
 
 function switchLayer(layer) {
@@ -1121,15 +1385,35 @@ function switchLayer(layer) {
   currentLayer = layer;
 }
 
+function switchLayer2(layer) {
+  if (!map2) return;
+  
+  map2.removeLayer(streetLayer2);
+  map2.removeLayer(satelliteLayer2);
+  map2.removeLayer(terrainLayer2);
+  
+  switch(layer) {
+    case 'street':
+      streetLayer2.addTo(map2);
+      break;
+    case 'satellite':
+      satelliteLayer2.addTo(map2);
+      break;
+    case 'terrain':
+      terrainLayer2.addTo(map2);
+      break;
+  }
+}
+
 function setPickupMarker(lat, lng) {
   if (pickupMarker) map.removeLayer(pickupMarker);
   
   pickupMarker = L.marker([lat, lng], {
     draggable: true,
     icon: L.divIcon({
-      html: '<div style="background:#10b981;width:30px;height:30px;border-radius:50%;border:4px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;">📍</div>',
-      iconSize: [30, 30],
-      iconAnchor: [15, 15]
+      html: '<div style="background:#10b981;width:32px;height:32px;border-radius:50%;border:4px solid #fff;box-shadow:0 3px 12px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;">📍</div>',
+      iconSize: [32, 32],
+      iconAnchor: [16, 16]
     })
   }).addTo(map).bindPopup("<b>📍 Pickup Location</b>").openPopup();
   
@@ -1149,6 +1433,17 @@ function requestLocation() {
   
   updateLocationStatus(false, "Getting location...");
   
+  // Check if we already have permission
+  navigator.permissions && navigator.permissions.query({name: 'geolocation'}).then(result => {
+    if (result.state === 'granted') {
+      locationPermissionGranted = true;
+    } else if (result.state === 'prompt') {
+      locationPermissionGranted = false;
+    } else {
+      locationPermissionGranted = false;
+    }
+  }).catch(() => {});
+  
   navigator.geolocation.getCurrentPosition(
     (position) => {
       currentPosition = {
@@ -1156,21 +1451,51 @@ function requestLocation() {
         lng: position.coords.longitude,
         accuracy: position.coords.accuracy
       };
+      
+      updateAccuracyDisplay(position.coords.accuracy);
       updateUserMarker(currentPosition);
-      updateLocationStatus(true, `Location active (Accuracy: ±${Math.round(position.coords.accuracy)}m)`);
+      
+      const accuracyText = position.coords.accuracy <= 10 ? 'High accuracy' : 
+                          position.coords.accuracy <= 50 ? 'Good accuracy' : 
+                          'Low accuracy';
+      updateLocationStatus(true, `Location active (${accuracyText})`);
+      
+      locationPermissionGranted = true;
       startWatchLocation();
       loadAllDeliveries();
     },
     (error) => {
       let msg = "Location error";
-      if (error.code === 1) msg = "Permission denied - Please allow location";
+      if (error.code === 1) {
+        msg = "Permission denied - Please allow location access";
+        locationPermissionGranted = false;
+      }
       else if (error.code === 2) msg = "Position unavailable";
       else if (error.code === 3) msg = "Timeout";
+      
       updateLocationStatus(false, msg);
       showToast(msg, 'error');
+      
+      // Try again after showing error if permission was granted
+      if (error.code === 1) {
+        setTimeout(() => {
+          if (confirm('Location permission needed. Try again?')) {
+            requestLocation();
+          }
+        }, 1000);
+      }
     },
-    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    { 
+      enableHighAccuracy: true, 
+      timeout: 30000, 
+      maximumAge: 0 
+    }
   );
+}
+
+function updateAccuracyDisplay(accuracy) {
+  accuracyValue.textContent = `±${Math.round(accuracy)}m`;
+  accuracyDisplay.className = 'accuracy-indicator ' + getAccuracyClass(accuracy);
 }
 
 function startWatchLocation() {
@@ -1183,11 +1508,17 @@ function startWatchLocation() {
         lng: position.coords.longitude,
         accuracy: position.coords.accuracy
       };
+      
+      updateAccuracyDisplay(position.coords.accuracy);
       updateUserMarker(currentPosition);
-      updateLocationStatus(true, `Live tracking (Accuracy: ±${Math.round(position.coords.accuracy)}m)`);
+      
+      const accuracyText = position.coords.accuracy <= 10 ? 'High accuracy' : 
+                          position.coords.accuracy <= 50 ? 'Good accuracy' : 
+                          'Low accuracy';
+      updateLocationStatus(true, `Live tracking (${accuracyText})`);
       
       // Update distance if we have selected delivery
-      if (selectedDeliveryForDistance) {
+      if (selectedDeliveryForDistance && currentPosition) {
         const dist = calculateDistance(
           currentPosition.lat, currentPosition.lng,
           selectedDeliveryForDistance.lat, selectedDeliveryForDistance.lng
@@ -1195,8 +1526,14 @@ function startWatchLocation() {
         distValue.textContent = formatDistance(dist);
       }
     },
-    (error) => { console.log("Watch error:", error.message); },
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+    (error) => { 
+      console.log("Watch error:", error.message); 
+    },
+    { 
+      enableHighAccuracy: true, 
+      timeout: 15000, 
+      maximumAge: 5000 
+    }
   );
 }
 
@@ -1206,13 +1543,13 @@ function updateUserMarker(pos) {
   const pulseIcon = L.divIcon({
     html: `
       <div style="position:relative;">
-        <div style="width:24px;height:24px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:50%;border:4px solid #fff;box-shadow:0 3px 10px rgba(99,102,241,0.5);"></div>
-        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:24px;height:24px;background:rgba(99,102,241,0.3);border-radius:50%;animation:pulse-ring 2s infinite;"></div>
+        <div style="width:28px;height:28px;background:linear-gradient(135deg,#6366f1,#8b5cf6,#ec4899);border-radius:50%;border:4px solid #fff;box-shadow:0 3px 15px rgba(99,102,241,0.6);"></div>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;background:rgba(99,102,241,0.3);border-radius:50%;animation:pulse-ring 1.5s infinite;"></div>
       </div>
-      <style>@keyframes pulse-ring{0%{transform:translate(-50%,-50%) scale(1);opacity:0.5}100%{transform:translate(-50%,-50%) scale(2.5);opacity:0}}</style>
+      <style>@keyframes pulse-ring{0%{transform:translate(-50%,-50%) scale(0.5);opacity:0.8}100%{transform:translate(-50%,-50%) scale(2);opacity:0}}</style>
     `,
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
+    iconSize: [45, 45],
+    iconAnchor: [22, 22],
     className: 'user-marker'
   });
   
@@ -1224,8 +1561,15 @@ function updateUserMarker(pos) {
       .bindPopup("<b>📍 My Location</b><br>Your current position").openPopup();
   }
   
-  if (!map.getCenter().equals([pos.lat, pos.lng])) {
-    // Don't auto-pan if user is interacting with map
+  // Update second map if dual view
+  if (map2) {
+    if (userMarker2) {
+      userMarker2.setLatLng([pos.lat, pos.lng]);
+    } else {
+      userMarker2 = L.marker([pos.lat, pos.lng], { icon: pulseIcon })
+        .addTo(map2)
+        .bindPopup("<b>📍 My Location</b><br>Your current position").openPopup();
+    }
   }
 }
 
@@ -1326,26 +1670,44 @@ document.getElementById("logoutBtn").onclick = async () => {
   }
 };
 
-document.getElementById("refreshLocationBtn").onclick = requestLocation;
+document.getElementById("refreshLocationBtn").onclick = () => {
+  if (currentPosition) {
+    showToast('Refreshing location...', 'info');
+  }
+  requestLocation();
+};
 
 document.getElementById("getPickupLocationBtn").onclick = () => {
   if (currentPosition) {
     pickupLat.value = currentPosition.lat.toFixed(6);
     pickupLng.value = currentPosition.lng.toFixed(6);
     setPickupMarker(currentPosition.lat, currentPosition.lng);
+    
+    // Calculate distance from current location to pickup point (should be very small)
+    if (currentPosition) {
+      const dist = calculateDistance(
+        currentPosition.lat, currentPosition.lng,
+        currentPosition.lat, currentPosition.lng
+      );
+      distValue.textContent = formatDistance(dist);
+    }
+    
     showToast('Current location set!', 'success');
   } else {
     showToast('Location not available. Please allow location permission.', 'error');
+    requestLocation();
   }
 };
 
 // Map controls
 document.getElementById('zoomToCurrentBtn').addEventListener('click', () => {
   if (currentPosition) {
-    map.setView([currentPosition.lat, currentPosition.lng], 16);
+    map.setView([currentPosition.lat, currentPosition.lng], 17);
     if (userMarker) userMarker.openPopup();
+    showToast('Zoomed to your location', 'success');
   } else {
     showToast('Location not available', 'error');
+    requestLocation();
   }
 });
 
@@ -1375,6 +1737,25 @@ document.getElementById("saveBtn").onclick = async () => {
   
   saveMsg.innerHTML = '<div class="message info">Saving...</div>';
   
+  // Get existing data to preserve timestamps
+  let existingData = {};
+  try {
+    const existingSnap = await getDoc(doc(db, "deliveries", mobile));
+    if (existingSnap.exists()) {
+      existingData = existingSnap.data();
+    }
+  } catch (e) {}
+  
+  // Set delivered/returned timestamp
+  let deliveredAt = existingData.deliveredAt || null;
+  let returnedAt = existingData.returnedAt || null;
+  
+  if (status === 'Delivered' && !existingData.deliveredAt) {
+    deliveredAt = Date.now();
+  } else if (status === 'Returned' && !existingData.returnedAt) {
+    returnedAt = Date.now();
+  }
+  
   try {
     await setDoc(doc(db, "deliveries", mobile), {
       mobile,
@@ -1384,6 +1765,8 @@ document.getElementById("saveBtn").onclick = async () => {
       note,
       lat,
       lng,
+      deliveredAt,
+      returnedAt,
       uid: auth.currentUser.uid,
       updatedAt: Date.now()
     });
@@ -1439,50 +1822,60 @@ document.getElementById("deleteBtn").onclick = async () => {
 };
 
 // ==================== SINGLE SEARCH ====================
-let selectedDeliveryForDistance = null;
-
 document.getElementById("singleSearchBtn").onclick = async () => {
   const searchTerm = document.getElementById("singleSearchInput").value.trim().toLowerCase();
   const resultDiv = document.getElementById("singleSearchResult");
   
   if (!searchTerm) {
-    resultDiv.innerHTML = '<div class="message error">Enter mobile, name, or address to search</div>';
+    resultDiv.innerHTML = '<div class="message error">Enter mobile, name, address, or notes to search</div>';
     return;
   }
   
   try {
     // Search by mobile
     let snap = await getDoc(doc(db, "deliveries", searchTerm));
+    let found = null;
     
-    if (!snap.exists()) {
-      // Search by name
-      const q = query(collection(db, "deliveries"), where("name", "==", searchTerm));
-      const querySnapshot = await getDocs(q);
+    if (snap.exists()) {
+      found = { id: snap.id, data: snap.data() };
+    } else {
+      // Search all documents
+      const allDocs = await getDocs(collection(db, "deliveries"));
       
-      if (!querySnapshot.empty) {
-        snap = querySnapshot.docs[0];
-      } else {
-        // Search by address (partial match)
-        const allDocs = await getDocs(collection(db, "deliveries"));
-        const matchingDocs = allDocs.docs.filter(d => {
-          const data = d.data();
-          return data.address && data.address.toLowerCase().includes(searchTerm);
-        });
+      for (const doc of allDocs.docs) {
+        const data = doc.data();
         
-        if (matchingDocs.length > 0) {
-          snap = matchingDocs[0];
+        // Check name
+        if (data.name && data.name.toLowerCase().includes(searchTerm)) {
+          found = { id: doc.id, data };
+          break;
+        }
+        // Check address
+        if (data.address && data.address.toLowerCase().includes(searchTerm)) {
+          found = { id: doc.id, data };
+          break;
+        }
+        // Check notes
+        if (data.note && data.note.toLowerCase().includes(searchTerm)) {
+          found = { id: doc.id, data };
+          break;
+        }
+        // Check mobile (partial match)
+        if (data.mobile && data.mobile.toLowerCase().includes(searchTerm)) {
+          found = { id: doc.id, data };
+          break;
         }
       }
     }
     
-    if (!snap || !snap.exists()) {
+    if (!found) {
       resultDiv.innerHTML = `<div class="message warning">⚠️ Not found: "${searchTerm}"</div>`;
       showToast('No delivery found', 'error');
       return;
     }
     
-    const d = snap.data();
-    const mobile = snap.id;
+    const d = found.data;
+    const mobile = found.id;
     
     // Fill form
     mobileInput.value = mobile;
@@ -1505,6 +1898,15 @@ document.getElementById("singleSearchBtn").onclick = async () => {
       distValue.textContent = formatDistance(dist);
     }
     
+    // Timestamps
+    let timestampHtml = '';
+    if (d.status === 'Delivered' && d.deliveredAt) {
+      timestampHtml += `<div style="margin-top:5px;color:#059669;font-size:13px;"><i class="fas fa-check-circle"></i> Delivered: ${formatTimestamp(d.deliveredAt)}</div>`;
+    }
+    if (d.status === 'Returned' && d.returnedAt) {
+      timestampHtml += `<div style="margin-top:5px;color:#dc2626;font-size:13px;"><i class="fas fa-undo"></i> Returned: ${formatTimestamp(d.returnedAt)}</div>`;
+    }
+    
     resultDiv.innerHTML = `
       <div class="message success" style="flex-direction:column;align-items:flex-start;">
         <div style="display:flex;justify-content:space-between;width:100%;flex-wrap:wrap;gap:10px;align-items:center;">
@@ -1514,10 +1916,11 @@ document.getElementById("singleSearchBtn").onclick = async () => {
           </div>
           <span class="status-badge ${statusClass}">${d.status}</span>
         </div>
-        <div style="margin-top:10px;width:100%;">
-          <div style="color:#475569;margin:5px 0;"><i class="fas fa-map-marker-alt"></i> ${d.address}</div>
-          <div style="color:#64748b;font-size:13px;margin:5px 0;"><i class="fas fa-sticky-note"></i> ${d.note || 'No notes'}</div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+        <div style="margin-top:12px;width:100%;">
+          <div style="color:#475569;margin:6px 0;"><i class="fas fa-map-marker-alt"></i> ${d.address}</div>
+          <div style="color:#64748b;font-size:13px;margin:6px 0;"><i class="fas fa-sticky-note"></i> ${d.note || 'No notes'}</div>
+          ${timestampHtml}
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
             ${distanceHtml}
             ${d.lat && d.lng ? `<button class="nav-btn" onclick="navigateTo(${d.lat},${d.lng},'${d.address.replace(/'/g, "\\'")}')"><i class="fas fa-directions"></i> Navigate</button>` : ''}
           </div>
@@ -1605,8 +2008,8 @@ document.getElementById("multiSearchBtn").onclick = async () => {
     // Sort by distance if current position available
     if (currentPosition) {
       found.sort((a, b) => {
-        const distA = calculateDistance(currentPosition.lat, currentPosition.lng, a.data.lat || 0, a.data.lng || 0);
-        const distB = calculateDistance(currentPosition.lat, currentPosition.lng, b.data.lat || 0, b.data.lng || 0);
+        const distA = calculateDistance(currentPosition.lat, currentPosition.lng, a.data.lat || 0, a.data.lng || 0) || Infinity;
+        const distB = calculateDistance(currentPosition.lat, currentPosition.lng, b.data.lat || 0, b.data.lng || 0) || Infinity;
         return distA - distB;
       });
     }
@@ -1621,6 +2024,15 @@ document.getElementById("multiSearchBtn").onclick = async () => {
         distanceHtml = `<div class="distance-badge"><i class="fas fa-route"></i> ${formatDistance(dist)}</div>`;
       }
       
+      // Timestamps
+      let timestampHtml = '';
+      if (d.status === 'Delivered' && d.deliveredAt) {
+        timestampHtml += `<span style="color:#059669;font-size:12px;"><i class="fas fa-check"></i> ${formatTimestamp(d.deliveredAt)}</span> `;
+      }
+      if (d.status === 'Returned' && d.returnedAt) {
+        timestampHtml += `<span style="color:#dc2626;font-size:12px;"><i class="fas fa-undo"></i> ${formatTimestamp(d.returnedAt)}</span> `;
+      }
+      
       html += `
         <div class="result-item" onclick="loadDelivery('${item.mobile}')">
           <div class="header">
@@ -1633,6 +2045,7 @@ document.getElementById("multiSearchBtn").onclick = async () => {
             <span>📝 ${d.note || 'No notes'}</span>
             <span>📍 ${d.lat ? d.lat.toFixed(4) + ', ' + d.lng.toFixed(4) : 'No location'}</span>
           </div>
+          <div style="margin-top:8px;font-size:12px;">${timestampHtml}</div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
             ${distanceHtml}
             ${d.lat && d.lng ? `<button class="nav-btn" onclick="event.stopPropagation();navigateTo(${d.lat},${d.lng},'${d.address.replace(/'/g, "\\'")}')"><i class="fas fa-directions"></i> Navigate</button>` : ''}
@@ -1696,19 +2109,19 @@ function showDeliveryOnMap(lat, lng, address, status, name = '', mobile = '') {
   else if (status === 'Returned') { color = '#ef4444'; iconEmoji = '↩️'; }
   
   const icon = L.divIcon({
-    html: `<div style="background:${color};width:32px;height:32px;border-radius:50%;border:4px solid #fff;box-shadow:0 3px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:bold;">${iconEmoji}</div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16]
+    html: `<div style="background:${color};width:34px;height:34px;border-radius:50%;border:4px solid #fff;box-shadow:0 3px 15px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:bold;">${iconEmoji}</div>`,
+    iconSize: [34, 34],
+    iconAnchor: [17, 17]
   });
   
   const popupContent = `
-    <div style="min-width:200px;">
-      <div style="font-weight:bold;font-size:16px;margin-bottom:5px;">${status}</div>
-      <div style="color:#64748b;margin:5px 0;">${mobile}</div>
-      ${name ? `<div style="color:#6366f1;margin:5px 0;">${name}</div>` : ''}
-      <div style="margin:5px 0;">${address}</div>
-      ${lat && lng ? `<div style="margin-top:10px;">
-        <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" style="background:#10b981;color:#fff;padding:8px 16px;border-radius:20px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600;">
+    <div style="min-width:220px;">
+      <div style="font-weight:bold;font-size:17px;margin-bottom:6px;">${status}</div>
+      <div style="color:#64748b;margin:5px 0;font-size:14px;">${mobile}</div>
+      ${name ? `<div style="color:#6366f1;margin:5px 0;font-weight:600;">${name}</div>` : ''}
+      <div style="margin:5px 0;font-size:14px;">${address}</div>
+      ${lat && lng ? `<div style="margin-top:12px;">
+        <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:10px 18px;border-radius:20px;text-decoration:none;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;">
           <i class="fas fa-directions"></i> Navigate
         </a>
       </div>` : ''}
@@ -1722,6 +2135,15 @@ function showDeliveryOnMap(lat, lng, address, status, name = '', mobile = '') {
   
   deliveryMarkers.push(marker);
   map.setView([lat, lng], 16);
+  
+  // Also show on second map if dual view
+  if (map2) {
+    const marker2 = L.marker([lat, lng], { icon: icon })
+      .addTo(map2)
+      .bindPopup(popupContent)
+      .openPopup();
+    deliveryMarkers2.push(marker2);
+  }
 }
 
 // ==================== LOAD ALL DELIVERIES ====================
@@ -1750,6 +2172,8 @@ async function loadAllDeliveries() {
     // Show on map
     displayAllMarkers();
     
+    showToast(`Loaded ${allDeliveries.length} deliveries`, 'success');
+    
   } catch (e) {
     console.error('Error loading deliveries:', e);
     showToast('Error loading deliveries', 'error');
@@ -1757,8 +2181,14 @@ async function loadAllDeliveries() {
 }
 
 function displayAllMarkers() {
+  // Clear existing markers
   deliveryMarkers.forEach(m => map.removeLayer(m));
   deliveryMarkers = [];
+  
+  if (map2) {
+    deliveryMarkers2.forEach(m => map2.removeLayer(m));
+    deliveryMarkers2 = [];
+  }
   
   const filtered = activeFilter === 'all' 
     ? allDeliveries 
@@ -1773,9 +2203,9 @@ function displayAllMarkers() {
     else if (d.status === 'Returned') { color = '#ef4444'; iconEmoji = '↩️'; }
     
     const icon = L.divIcon({
-      html: `<div style="background:${color};width:28px;height:28px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;">${iconEmoji}</div>`,
-      iconSize: [28, 28],
-      iconAnchor: [14, 14]
+      html: `<div style="background:${color};width:30px;height:30px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;">${iconEmoji}</div>`,
+      iconSize: [30, 30],
+      iconAnchor: [15, 15]
     });
     
     const marker = L.marker([d.lat, d.lng], { icon: icon })
@@ -1790,12 +2220,30 @@ function displayAllMarkers() {
       `);
     
     deliveryMarkers.push(marker);
+    
+    // Also add to second map
+    if (map2) {
+      const marker2 = L.marker([d.lat, d.lng], { icon: icon })
+        .addTo(map2)
+        .bindPopup(`
+          <div style="min-width:180px;">
+            <div style="font-weight:bold;">${d.status}</div>
+            <div>${d.mobile}</div>
+            ${d.name ? `<div>${d.name}</div>` : ''}
+            <div>${d.address}</div>
+          </div>
+        `);
+      deliveryMarkers2.push(marker2);
+    }
   });
   
   // Fit bounds if we have markers
   if (deliveryMarkers.length > 0) {
     const group = L.featureGroup(deliveryMarkers);
     map.fitBounds(group.getBounds().pad(0.1));
+    if (map2) {
+      map2.fitBounds(group.getBounds().pad(0.1));
+    }
   }
 }
 
