@@ -61,7 +61,6 @@ body {
   z-index: -1;
 }
 
-/* Scrolling Marquee */
 .marquee-container {
   position: fixed;
   bottom: 0;
@@ -406,6 +405,8 @@ textarea { resize: vertical; min-height: 100px; }
 
 .location-status .dot.error { background: #ef4444; }
 
+.location-status .dot.pending { background: #f59e0b; }
+
 @keyframes pulse-dot {
   0%, 100% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
   50% { transform: scale(1.2); opacity: 0.8; box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
@@ -734,7 +735,6 @@ textarea { resize: vertical; min-height: 100px; }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Dual Map Container */
 .dual-map-container {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -773,7 +773,6 @@ textarea { resize: vertical; min-height: 100px; }
   .stats-grid { grid-template-columns: 1fr; }
 }
 
-/* Additional Features Styles */
 .quick-actions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -831,6 +830,43 @@ textarea { resize: vertical; min-height: 100px; }
   background: #d1fae5;
   color: #059669;
 }
+
+.location-permission-modal {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+}
+
+.location-permission-modal .modal-content {
+  background: white;
+  padding: 40px;
+  border-radius: 20px;
+  text-align: center;
+  max-width: 450px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.location-permission-modal .modal-content i {
+  font-size: 60px;
+  color: #6366f1;
+  margin-bottom: 20px;
+}
+
+.location-permission-modal .modal-content h3 {
+  font-size: 24px;
+  margin-bottom: 15px;
+  color: #0f172a;
+}
+
+.location-permission-modal .modal-content p {
+  color: #64748b;
+  margin-bottom: 25px;
+  line-height: 1.6;
+}
 </style>
 </head>
 <body>
@@ -861,9 +897,21 @@ textarea { resize: vertical; min-height: 100px; }
   </div>
 </div>
 
+<!-- Location Permission Modal -->
+<div id="locationPermissionModal" class="location-permission-modal hidden">
+  <div class="modal-content">
+    <i class="fas fa-map-marker-alt"></i>
+    <h3>📍 Enable Location</h3>
+    <p>We need your location to show your position on the map and calculate distances to deliveries. Please allow location access.</p>
+    <div style="display:flex;gap:15px;justify-content:center;flex-wrap:wrap;">
+      <button id="allowLocationBtn" class="btn btn-primary"><i class="fas fa-check"></i> Allow Location</button>
+      <button id="skipLocationBtn" class="btn btn-secondary"><i class="fas fa-times"></i> Skip for Now</button>
+    </div>
+  </div>
+</div>
+
 <div class="container">
 
-<!-- Login Panel -->
 <div id="authCard" class="auth-wrapper">
   <div class="auth-card">
     <div class="logo">
@@ -886,10 +934,8 @@ textarea { resize: vertical; min-height: 100px; }
   </div>
 </div>
 
-<!-- Main App -->
 <div id="app" class="hidden">
 
-<!-- Header with Stats -->
 <div class="card">
   <div class="header-stats">
     <div>
@@ -907,7 +953,7 @@ textarea { resize: vertical; min-height: 100px; }
   <div class="location-controls">
     <div class="location-status">
       <span class="dot" id="locationDot"></span>
-      <span id="locationStatusText">Getting location...</span>
+      <span id="locationStatusText">Location: Not enabled</span>
     </div>
     <div id="accuracyDisplay" class="accuracy-indicator">
       <i class="fas fa-crosshairs"></i> <span id="accuracyValue">--</span>
@@ -921,7 +967,6 @@ textarea { resize: vertical; min-height: 100px; }
   </div>
 </div>
 
-<!-- Stats Overview -->
 <div class="stats-grid">
   <div class="stat-card pending">
     <div class="icon"><i class="fas fa-clock"></i></div>
@@ -940,7 +985,6 @@ textarea { resize: vertical; min-height: 100px; }
   </div>
 </div>
 
-<!-- Quick Actions -->
 <div class="card">
   <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
   <div class="quick-actions">
@@ -963,7 +1007,6 @@ textarea { resize: vertical; min-height: 100px; }
   </div>
 </div>
 
-<!-- Add/Update Delivery -->
 <div class="card">
   <h3><i class="fas fa-plus-circle"></i> Add / Update Delivery</h3>
   
@@ -1020,7 +1063,6 @@ textarea { resize: vertical; min-height: 100px; }
   <div id="saveMsg"></div>
 </div>
 
-<!-- Single Search -->
 <div class="card">
   <h3><i class="fas fa-search"></i> Single Search</h3>
   <div class="search-container">
@@ -1034,7 +1076,6 @@ textarea { resize: vertical; min-height: 100px; }
   <div id="singleSearchResult"></div>
 </div>
 
-<!-- Multiple Search -->
 <div class="card">
   <h3><i class="fas fa-list-ul"></i> Multiple Search</h3>
   <div class="form-group">
@@ -1050,7 +1091,6 @@ textarea { resize: vertical; min-height: 100px; }
   <div id="multiSearchResults" class="results-list"></div>
 </div>
 
-<!-- Map -->
 <div class="card" style="position:relative;">
   <h3><i class="fas fa-map"></i> Live Map</h3>
   
@@ -1122,6 +1162,7 @@ const locationStatusText = document.getElementById("locationStatusText");
 const accuracyValue = document.getElementById("accuracyValue");
 const accuracyDisplay = document.getElementById("accuracyDisplay");
 const distValue = document.getElementById("distValue");
+const locationPermissionModal = document.getElementById("locationPermissionModal");
 
 const mobileInput = document.getElementById("mobileInput");
 const nameInput = document.getElementById("nameInput");
@@ -1147,7 +1188,8 @@ let allDeliveries = [];
 let activeFilter = 'all';
 let isDualView = false;
 let selectedDeliveryForDistance = null;
-let locationPermissionGranted = false;
+let locationEnabled = false;
+let locationRequested = false;
 
 // ==================== UTILITIES ====================
 function showToast(message, type = 'info') {
@@ -1168,11 +1210,10 @@ function formatDistance(meters) {
   }
 }
 
-// Accurate Haversine formula for distance calculation
 function calculateDistance(lat1, lon1, lat2, lon2) {
   if (!lat1 || !lon1 || !lat2 || !lon2) return null;
   
-  const R = 6371000; // Earth's radius in meters
+  const R = 6371000;
   const φ1 = lat1 * Math.PI / 180;
   const φ2 = lat2 * Math.PI / 180;
   const Δφ = (lat2 - lat1) * Math.PI / 180;
@@ -1216,25 +1257,21 @@ function initMap() {
   if (map) map.remove();
   if (map2) map2.remove();
   
-  // Main Map
   map = L.map('map', {
     zoomControl: true,
     attributionControl: true
   }).setView([23.8103, 90.4125], 12);
   
-  // Street Layer
   streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap',
     maxZoom: 19
   });
   
-  // Satellite Layer (ESRI)
   satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     attribution: '© Esri',
     maxZoom: 19
   });
   
-  // Terrain Layer
   terrainLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenTopoMap',
     maxZoom: 17
@@ -1242,7 +1279,6 @@ function initMap() {
   
   streetLayer.addTo(map);
   
-  // Geocoder
   const geocoder = L.Control.geocoder({
     defaultMarkGeocode: false,
     placeholder: 'Search address...'
@@ -1255,7 +1291,6 @@ function initMap() {
     showToast('Address found!', 'success');
   }).addTo(map);
   
-  // Click on map
   map.on('click', function(e) {
     pickupLat.value = e.latlng.lat.toFixed(6);
     pickupLng.value = e.latlng.lng.toFixed(6);
@@ -1263,7 +1298,6 @@ function initMap() {
     showToast('📍 Pickup location set!', 'info');
   });
   
-  // Layer control buttons
   document.querySelectorAll('.layer-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
@@ -1274,7 +1308,6 @@ function initMap() {
     });
   });
   
-  // Filter buttons
   document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -1284,10 +1317,7 @@ function initMap() {
     });
   });
   
-  // Dual view toggle
   document.getElementById('dualMapBtn').addEventListener('click', toggleDualView);
-  
-  requestLocation();
 }
 
 function toggleDualView() {
@@ -1310,7 +1340,6 @@ function toggleDualView() {
       </div>
     `;
     
-    // Initialize second map
     map2 = L.map('map2', {
       zoomControl: true,
       attributionControl: true
@@ -1333,22 +1362,18 @@ function toggleDualView() {
     
     streetLayer2.addTo(map2);
     
-    // Sync second map with main map
     map.on('move', () => {
       if (map2) map2.setView(map.getCenter(), map.getZoom());
     });
     
-    // Reinitialize main map
     initMap();
     isDualView = true;
     document.getElementById('dualMapBtn').innerHTML = '<i class="fas fa-columns"></i> Single View';
     
-    // Show user on both maps
     if (currentPosition) {
       updateUserMarker(currentPosition);
     }
     
-    // Show deliveries on both maps
     displayAllMarkers();
     
   } else {
@@ -1424,26 +1449,44 @@ function setPickupMarker(lat, lng) {
   });
 }
 
-// ==================== LOCATION ====================
+// ==================== LOCATION - FIXED VERSION ====================
+
+// Show the location permission modal after login
+function showLocationPermissionModal() {
+  if (locationRequested) return; // Already asked
+  locationPermissionModal.classList.remove('hidden');
+}
+
+function hideLocationPermissionModal() {
+  locationPermissionModal.classList.add('hidden');
+}
+
+// Handle "Allow Location" button
+document.getElementById('allowLocationBtn').addEventListener('click', function() {
+  hideLocationPermissionModal();
+  locationRequested = true;
+  requestLocation();
+});
+
+// Handle "Skip" button
+document.getElementById('skipLocationBtn').addEventListener('click', function() {
+  hideLocationPermissionModal();
+  locationRequested = true;
+  locationEnabled = false;
+  updateLocationStatus('skipped', 'Location: Skipped');
+  loadAllDeliveries(); // Load deliveries even without location
+});
+
 function requestLocation() {
   if (!navigator.geolocation) {
-    updateLocationStatus(false, "Geolocation not supported");
+    updateLocationStatus(false, "Location: Not supported");
+    loadAllDeliveries();
     return;
   }
   
-  updateLocationStatus(false, "Getting location...");
+  updateLocationStatus('pending', "Location: Getting...");
   
-  // Check if we already have permission
-  navigator.permissions && navigator.permissions.query({name: 'geolocation'}).then(result => {
-    if (result.state === 'granted') {
-      locationPermissionGranted = true;
-    } else if (result.state === 'prompt') {
-      locationPermissionGranted = false;
-    } else {
-      locationPermissionGranted = false;
-    }
-  }).catch(() => {});
-  
+  // Get current position with high accuracy
   navigator.geolocation.getCurrentPosition(
     (position) => {
       currentPosition = {
@@ -1455,39 +1498,30 @@ function requestLocation() {
       updateAccuracyDisplay(position.coords.accuracy);
       updateUserMarker(currentPosition);
       
-      const accuracyText = position.coords.accuracy <= 10 ? 'High accuracy' : 
-                          position.coords.accuracy <= 50 ? 'Good accuracy' : 
-                          'Low accuracy';
-      updateLocationStatus(true, `Location active (${accuracyText})`);
+      const accuracyText = position.coords.accuracy <= 10 ? 'High' : 
+                          position.coords.accuracy <= 50 ? 'Good' : 
+                          'Low';
+      updateLocationStatus(true, `Location: Active (${accuracyText})`);
       
-      locationPermissionGranted = true;
-      startWatchLocation();
+      locationEnabled = true;
       loadAllDeliveries();
     },
     (error) => {
-      let msg = "Location error";
+      let msg = "Location: Failed";
       if (error.code === 1) {
-        msg = "Permission denied - Please allow location access";
-        locationPermissionGranted = false;
+        msg = "Location: Denied by user";
+        showToast('Location denied. You can still add deliveries manually.', 'warning');
       }
-      else if (error.code === 2) msg = "Position unavailable";
-      else if (error.code === 3) msg = "Timeout";
+      else if (error.code === 2) msg = "Location: Unavailable";
+      else if (error.code === 3) msg = "Location: Timeout";
       
       updateLocationStatus(false, msg);
-      showToast(msg, 'error');
-      
-      // Try again after showing error if permission was granted
-      if (error.code === 1) {
-        setTimeout(() => {
-          if (confirm('Location permission needed. Try again?')) {
-            requestLocation();
-          }
-        }, 1000);
-      }
+      locationEnabled = false;
+      loadAllDeliveries();
     },
     { 
       enableHighAccuracy: true, 
-      timeout: 30000, 
+      timeout: 20000, 
       maximumAge: 0 
     }
   );
@@ -1496,45 +1530,6 @@ function requestLocation() {
 function updateAccuracyDisplay(accuracy) {
   accuracyValue.textContent = `±${Math.round(accuracy)}m`;
   accuracyDisplay.className = 'accuracy-indicator ' + getAccuracyClass(accuracy);
-}
-
-function startWatchLocation() {
-  if (watchId) navigator.geolocation.clearWatch(watchId);
-  
-  watchId = navigator.geolocation.watchPosition(
-    (position) => {
-      currentPosition = {
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
-        accuracy: position.coords.accuracy
-      };
-      
-      updateAccuracyDisplay(position.coords.accuracy);
-      updateUserMarker(currentPosition);
-      
-      const accuracyText = position.coords.accuracy <= 10 ? 'High accuracy' : 
-                          position.coords.accuracy <= 50 ? 'Good accuracy' : 
-                          'Low accuracy';
-      updateLocationStatus(true, `Live tracking (${accuracyText})`);
-      
-      // Update distance if we have selected delivery
-      if (selectedDeliveryForDistance && currentPosition) {
-        const dist = calculateDistance(
-          currentPosition.lat, currentPosition.lng,
-          selectedDeliveryForDistance.lat, selectedDeliveryForDistance.lng
-        );
-        distValue.textContent = formatDistance(dist);
-      }
-    },
-    (error) => { 
-      console.log("Watch error:", error.message); 
-    },
-    { 
-      enableHighAccuracy: true, 
-      timeout: 15000, 
-      maximumAge: 5000 
-    }
-  );
 }
 
 function updateUserMarker(pos) {
@@ -1561,7 +1556,6 @@ function updateUserMarker(pos) {
       .bindPopup("<b>📍 My Location</b><br>Your current position").openPopup();
   }
   
-  // Update second map if dual view
   if (map2) {
     if (userMarker2) {
       userMarker2.setLatLng([pos.lat, pos.lng]);
@@ -1574,7 +1568,15 @@ function updateUserMarker(pos) {
 }
 
 function updateLocationStatus(active, text) {
-  locationDot.className = 'dot ' + (active ? 'active' : 'error');
+  if (active === true) {
+    locationDot.className = 'dot active';
+  } else if (active === false) {
+    locationDot.className = 'dot error';
+  } else if (active === 'pending') {
+    locationDot.className = 'dot pending';
+  } else {
+    locationDot.className = 'dot';
+  }
   locationStatusText.textContent = text;
 }
 
@@ -1591,11 +1593,21 @@ onAuthStateChanged(auth, (user) => {
     authCard.classList.add("hidden");
     appDiv.classList.remove("hidden");
     userEmail.textContent = user.email;
+    
+    // Initialize map first
     setTimeout(initMap, 300);
+    
+    // Then show location permission modal (only once after login)
+    setTimeout(() => {
+      showLocationPermissionModal();
+    }, 1000);
+    
   } else {
     authCard.classList.remove("hidden");
     appDiv.classList.add("hidden");
     userEmail.textContent = "";
+    locationPermissionModal.classList.add('hidden');
+    locationRequested = false;
   }
 });
 
@@ -1671,9 +1683,11 @@ document.getElementById("logoutBtn").onclick = async () => {
 };
 
 document.getElementById("refreshLocationBtn").onclick = () => {
-  if (currentPosition) {
-    showToast('Refreshing location...', 'info');
+  if (!locationRequested) {
+    showLocationPermissionModal();
+    return;
   }
+  showToast('Refreshing location...', 'info');
   requestLocation();
 };
 
@@ -1682,32 +1696,21 @@ document.getElementById("getPickupLocationBtn").onclick = () => {
     pickupLat.value = currentPosition.lat.toFixed(6);
     pickupLng.value = currentPosition.lng.toFixed(6);
     setPickupMarker(currentPosition.lat, currentPosition.lng);
-    
-    // Calculate distance from current location to pickup point (should be very small)
-    if (currentPosition) {
-      const dist = calculateDistance(
-        currentPosition.lat, currentPosition.lng,
-        currentPosition.lat, currentPosition.lng
-      );
-      distValue.textContent = formatDistance(dist);
-    }
-    
     showToast('Current location set!', 'success');
   } else {
-    showToast('Location not available. Please allow location permission.', 'error');
-    requestLocation();
+    showToast('Location not available. Enable location first.', 'error');
+    showLocationPermissionModal();
   }
 };
 
-// Map controls
 document.getElementById('zoomToCurrentBtn').addEventListener('click', () => {
   if (currentPosition) {
     map.setView([currentPosition.lat, currentPosition.lng], 17);
     if (userMarker) userMarker.openPopup();
     showToast('Zoomed to your location', 'success');
   } else {
-    showToast('Location not available', 'error');
-    requestLocation();
+    showToast('Location not available. Enable location first.', 'error');
+    showLocationPermissionModal();
   }
 });
 
@@ -1737,7 +1740,6 @@ document.getElementById("saveBtn").onclick = async () => {
   
   saveMsg.innerHTML = '<div class="message info">Saving...</div>';
   
-  // Get existing data to preserve timestamps
   let existingData = {};
   try {
     const existingSnap = await getDoc(doc(db, "deliveries", mobile));
@@ -1746,7 +1748,6 @@ document.getElementById("saveBtn").onclick = async () => {
     }
   } catch (e) {}
   
-  // Set delivered/returned timestamp
   let deliveredAt = existingData.deliveredAt || null;
   let returnedAt = existingData.returnedAt || null;
   
@@ -1797,7 +1798,7 @@ document.getElementById("clearFormBtn").onclick = () => {
   saveMsg.innerHTML = '';
   selectedDeliveryForDistance = null;
   distValue.textContent = '--';
-  if (pickupMarker) {
+  if (pickupMarker && map) {
     map.removeLayer(pickupMarker);
     pickupMarker = null;
   }
@@ -1821,7 +1822,7 @@ document.getElementById("deleteBtn").onclick = async () => {
   }
 };
 
-// ==================== SINGLE SEARCH ====================
+// ==================== SEARCH FUNCTIONS ====================
 document.getElementById("singleSearchBtn").onclick = async () => {
   const searchTerm = document.getElementById("singleSearchInput").value.trim().toLowerCase();
   const resultDiv = document.getElementById("singleSearchResult");
@@ -1832,35 +1833,29 @@ document.getElementById("singleSearchBtn").onclick = async () => {
   }
   
   try {
-    // Search by mobile
     let snap = await getDoc(doc(db, "deliveries", searchTerm));
     let found = null;
     
     if (snap.exists()) {
       found = { id: snap.id, data: snap.data() };
     } else {
-      // Search all documents
       const allDocs = await getDocs(collection(db, "deliveries"));
       
       for (const doc of allDocs.docs) {
         const data = doc.data();
         
-        // Check name
         if (data.name && data.name.toLowerCase().includes(searchTerm)) {
           found = { id: doc.id, data };
           break;
         }
-        // Check address
         if (data.address && data.address.toLowerCase().includes(searchTerm)) {
           found = { id: doc.id, data };
           break;
         }
-        // Check notes
         if (data.note && data.note.toLowerCase().includes(searchTerm)) {
           found = { id: doc.id, data };
           break;
         }
-        // Check mobile (partial match)
         if (data.mobile && data.mobile.toLowerCase().includes(searchTerm)) {
           found = { id: doc.id, data };
           break;
@@ -1877,7 +1872,6 @@ document.getElementById("singleSearchBtn").onclick = async () => {
     const d = found.data;
     const mobile = found.id;
     
-    // Fill form
     mobileInput.value = mobile;
     nameInput.value = d.name || '';
     addressInput.value = d.address || '';
@@ -1888,7 +1882,6 @@ document.getElementById("singleSearchBtn").onclick = async () => {
     
     let statusClass = 'status-' + (d.status || 'pending').toLowerCase();
     
-    // Calculate distance
     let distanceHtml = '';
     if (d.lat && d.lng && currentPosition) {
       const dist = calculateDistance(currentPosition.lat, currentPosition.lng, d.lat, d.lng);
@@ -1898,7 +1891,6 @@ document.getElementById("singleSearchBtn").onclick = async () => {
       distValue.textContent = formatDistance(dist);
     }
     
-    // Timestamps
     let timestampHtml = '';
     if (d.status === 'Delivered' && d.deliveredAt) {
       timestampHtml += `<div style="margin-top:5px;color:#059669;font-size:13px;"><i class="fas fa-check-circle"></i> Delivered: ${formatTimestamp(d.deliveredAt)}</div>`;
@@ -1945,7 +1937,6 @@ document.getElementById("clearSingleSearchBtn").onclick = () => {
   distValue.textContent = '--';
 };
 
-// ==================== MULTIPLE SEARCH ====================
 let searchList = [];
 
 document.getElementById("multiSearchBtn").onclick = async () => {
@@ -1958,13 +1949,11 @@ document.getElementById("multiSearchBtn").onclick = async () => {
     return;
   }
   
-  // Parse numbers
   const numbers = input.split(/[\s,]+/).filter(n => n.length > 0);
   searchList = [...new Set(numbers)];
   
   if (searchList.length === 0) return;
   
-  // Show tags
   tagsDiv.classList.remove('hidden');
   tagsDiv.innerHTML = searchList.map(n => 
     `<span class="search-tag" data-mobile="${n}">${n} <span class="remove" onclick="removeSearchTag('${n}')">×</span></span>`
@@ -1989,13 +1978,11 @@ document.getElementById("multiSearchBtn").onclick = async () => {
     }
   }
   
-  // Update tags for not found
   notFound.forEach(n => {
     const tag = document.querySelector(`.search-tag[data-mobile="${n}"]`);
     if (tag) tag.classList.add('not-found');
   });
   
-  // Show results
   let html = '';
   
   if (notFound.length > 0) {
@@ -2005,7 +1992,6 @@ document.getElementById("multiSearchBtn").onclick = async () => {
   if (found.length > 0) {
     html += `<div class="message success">✓ Found (${found.length}):</div>`;
     
-    // Sort by distance if current position available
     if (currentPosition) {
       found.sort((a, b) => {
         const distA = calculateDistance(currentPosition.lat, currentPosition.lng, a.data.lat || 0, a.data.lng || 0) || Infinity;
@@ -2024,7 +2010,6 @@ document.getElementById("multiSearchBtn").onclick = async () => {
         distanceHtml = `<div class="distance-badge"><i class="fas fa-route"></i> ${formatDistance(dist)}</div>`;
       }
       
-      // Timestamps
       let timestampHtml = '';
       if (d.status === 'Delivered' && d.deliveredAt) {
         timestampHtml += `<span style="color:#059669;font-size:12px;"><i class="fas fa-check"></i> ${formatTimestamp(d.deliveredAt)}</span> `;
@@ -2054,7 +2039,6 @@ document.getElementById("multiSearchBtn").onclick = async () => {
       `;
     });
     
-    // Show first found on map
     if (found[0].data.lat && found[0].data.lng) {
       showDeliveryOnMap(found[0].data.lat, found[0].data.lng, found[0].data.address, found[0].data.status, found[0].data.name, found[0].mobile);
       
@@ -2091,7 +2075,6 @@ window.loadDelivery = function(mobile) {
   document.getElementById("singleSearchBtn").click();
 };
 
-// Navigation function
 window.navigateTo = function(lat, lng, address) {
   const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${encodeURIComponent(address || '')}`;
   window.open(url, '_blank');
@@ -2136,7 +2119,6 @@ function showDeliveryOnMap(lat, lng, address, status, name = '', mobile = '') {
   deliveryMarkers.push(marker);
   map.setView([lat, lng], 16);
   
-  // Also show on second map if dual view
   if (map2) {
     const marker2 = L.marker([lat, lng], { icon: icon })
       .addTo(map2)
@@ -2146,7 +2128,6 @@ function showDeliveryOnMap(lat, lng, address, status, name = '', mobile = '') {
   }
 }
 
-// ==================== LOAD ALL DELIVERIES ====================
 async function loadAllDeliveries() {
   try {
     const snapshot = await getDocs(collection(db, "deliveries"));
@@ -2164,15 +2145,15 @@ async function loadAllDeliveries() {
       else if (data.status === 'Returned') returned++;
     });
     
-    // Update stats
     document.getElementById('pendingCount').textContent = pending;
     document.getElementById('deliveredCount').textContent = delivered;
     document.getElementById('returnedCount').textContent = returned;
     
-    // Show on map
     displayAllMarkers();
     
-    showToast(`Loaded ${allDeliveries.length} deliveries`, 'success');
+    if (allDeliveries.length > 0) {
+      showToast(`Loaded ${allDeliveries.length} deliveries`, 'success');
+    }
     
   } catch (e) {
     console.error('Error loading deliveries:', e);
@@ -2181,7 +2162,6 @@ async function loadAllDeliveries() {
 }
 
 function displayAllMarkers() {
-  // Clear existing markers
   deliveryMarkers.forEach(m => map.removeLayer(m));
   deliveryMarkers = [];
   
@@ -2221,7 +2201,6 @@ function displayAllMarkers() {
     
     deliveryMarkers.push(marker);
     
-    // Also add to second map
     if (map2) {
       const marker2 = L.marker([d.lat, d.lng], { icon: icon })
         .addTo(map2)
@@ -2237,7 +2216,6 @@ function displayAllMarkers() {
     }
   });
   
-  // Fit bounds if we have markers
   if (deliveryMarkers.length > 0) {
     const group = L.featureGroup(deliveryMarkers);
     map.fitBounds(group.getBounds().pad(0.1));
@@ -2251,7 +2229,6 @@ function filterMarkers() {
   displayAllMarkers();
 }
 
-// Enter key handlers
 document.getElementById("singleSearchInput").addEventListener('keypress', (e) => {
   if (e.key === 'Enter') document.getElementById("singleSearchBtn").click();
 });
